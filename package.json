@@ -1,0 +1,32 @@
+{
+  "name": "zoera",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zoera — app football temps réel sur l'API Bzzoiro Sports Data (BSD) — Node.js + Express + Tailwind CSS",
+  "scripts": {
+    "dev": "tsx watch server/index.ts",
+    "dev:css": "tailwindcss -i client/styles/app.css -o public/css/app.css --watch",
+    "build": "npm run build:css && npm run build:server && npm run build:client",
+    "build:css": "tailwindcss -i client/styles/app.css -o public/css/app.css --minify",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "tsc -p tsconfig.client.json",
+    "start": "node dist/server/index.js",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@tailwindcss/cli": "^4.1.0",
+    "@types/ejs": "^3.1.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}

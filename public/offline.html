@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hors connexion · Zoera</title>
+  <meta name="theme-color" content="#0a0d12">
+  <meta name="color-scheme" content="dark">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="ko-grain min-h-screen bg-ink-900 font-sans text-mist-100 antialiased">
+  <div class="relative z-10 flex min-h-screen flex-col">
+    <header class="border-b border-line bg-ink-900/92">
+      <div class="mx-auto flex w-full max-w-[1240px] items-center gap-2 px-3 py-2.5 md:px-6 md:py-3">
+        <span class="grid h-8 w-8 place-items-center rounded-[9px] bg-acid-400 text-ink-950">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true" focusable="false">
+            <g transform="translate(1.2 1.2) scale(0.9)">
+              <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+              <circle cx="20.4" cy="3.6" r="2.7"/>
+            </g>
+          </svg>
+        </span>
+        <span class="font-display text-[19px] leading-none font-bold tracking-[0.02em] text-mist-50 md:text-[21px]">
+          ZO<span class="text-acid-400">ERA</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-6 px-3 py-14 text-center">
+      <p class="ko-eyebrow font-display text-[64px] leading-none font-bold tracking-tight text-acid-400 md:text-[96px]">OFF</p>
+      <div class="max-w-md">
+        <h1 class="font-display text-[24px] leading-tight font-bold tracking-tight text-mist-50 md:text-[30px]">Pas de connexion</h1>
+        <p class="mt-3 text-[13px] leading-relaxed text-mist-400">
+          Zoera a besoin du réseau pour les scores en direct. Vérifie ta connexion,
+          puis réessaie — la dernière page consultée reste disponible.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <button type="button" onclick="location.reload()"
+                class="ko-focus inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-acid-500/40 bg-acid-500/12 px-4 text-[13px] font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">
+          Réessayer
+        </button>
+        <a href="/" class="ko-focus inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-line bg-ink-850 px-4 text-[13px] font-medium text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">
+          Accueil
+        </a>
+      </div>
+      <p class="text-[11px] text-mist-500">Les données sont actualisées en continu dès le retour du réseau.</p>
+    </main>
+  </div>
+</body>
+</html>

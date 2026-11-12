@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#cdf542" role="img" aria-label="Zoera — direction 03">
+  <title>Zoera 03 — le Z tissé</title>
+  <g id="mark" fill="currentColor">
+    <rect x="3.5" y="3" width="17" height="3.2"/>
+    <rect x="18.9" y="4.6" width="3.2" height="4.2"/>
+    <rect x="16.3" y="7.2" width="4.2" height="3.2"/>
+    <rect x="14.7" y="8.8" width="3.2" height="4.2"/>
+    <rect x="12.1" y="11.4" width="4.2" height="3.2"/>
+    <rect x="10.5" y="13" width="3.2" height="4.2"/>
+    <rect x="7.9" y="15.6" width="4.2" height="3.2"/>
+    <rect x="6.3" y="17.2" width="3.2" height="3.4"/>
+    <path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/>
+  </g>
+</svg>

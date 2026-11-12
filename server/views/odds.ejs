@@ -1,0 +1,185 @@
+<%
+  const oddsList = odds || [];
+  const marketList = markets || [];
+  const current = market || '';
+
+  const marketLabels = {
+    '1x2': '1X2 — Victoire / nul / défaite',
+    'over_under_25': 'Plus ou moins de 2,5 buts',
+    'over_under_15': 'Plus ou moins de 1,5 buts',
+    'over_under_35': 'Plus ou moins de 3,5 buts',
+    'btts': 'Les deux équipes marquent'
+  };
+  const label = function (m) {
+    if (marketLabels[m]) return marketLabels[m];
+    const pretty = m.replace(/_/g, ' ');
+    return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+  };
+  /* Version courte du marché : le rail de filtres défile, un libellé long
+     mange l'écran en mobile. */
+  const marketShorts = {
+    '1x2': '1X2',
+    'over_under_25': '2,5 buts',
+    'over_under_15': '1,5 buts',
+    'over_under_35': '3,5 buts',
+    'btts': 'Les 2 marquent'
+  };
+  const shortLabel = function (m) {
+    if (marketShorts[m]) return marketShorts[m];
+    const pretty = String(m || '').replace(/_/g, ' ');
+    return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+  };
+  /* Libellé compact d'une issue : 1X2, plus/moins, les 2 marquent. */
+  const outcomeShorts = {
+    'home': 'Dom.',
+    'draw': 'Nul',
+    'away': 'Ext.',
+    'over': 'Plus',
+    'under': 'Moins',
+    'yes': 'Oui',
+    'no': 'Non'
+  };
+  const outcomeShort = function (o, fallback) {
+    const key = String(o || '').toLowerCase();
+    if (outcomeShorts[key]) return outcomeShorts[key];
+    const raw = String(fallback || o || '').trim();
+    if (!raw) return '—';
+    return raw.length > 12 ? raw.slice(0, 11) + '…' : raw;
+  };
+
+  /* Préparation UNIQUE des lignes : les deux rendus (carte mobile / tableau
+     desktop) consomment ces mêmes objets — aucun appel API supplémentaire,
+     aucun calcul refait. */
+  const prepared = oddsList.map(function (row) {
+    const homeId = (typeof row.homeTeamId !== 'undefined' && row.homeTeamId !== null && row.homeTeamId !== undefined) ? row.homeTeamId : null;
+    const awayId = (typeof row.awayTeamId !== 'undefined' && row.awayTeamId !== null && row.awayTeamId !== undefined) ? row.awayTeamId : null;
+    const leagueId = (typeof row.leagueId !== 'undefined' && row.leagueId !== null && row.leagueId !== undefined) ? row.leagueId : null;
+    const homeName = row.homeTeam || '—';
+    const awayName = row.awayTeam || '—';
+    const marketKey = row.market || current || '1x2';
+    const outcomes = (row.outcomes || []).map(function (o) {
+      const dec = (o.decimal === null || o.decimal === undefined) ? null : Number(o.decimal);
+      const imp = (o.implied === null || o.implied === undefined) ? null : Number(o.implied);
+      return {
+        outcome: o.outcome || '',
+        label: o.label || o.outcome || '',
+        short: outcomeShort(o.outcome, o.label),
+        decimal: (dec === null || isNaN(dec)) ? null : dec,
+        implied: (imp === null || isNaN(imp)) ? null : imp,
+        movement: o.movement || null
+      };
+    });
+    const count = (typeof row.bookmakerCount !== 'undefined' && row.bookmakerCount !== null) ? Number(row.bookmakerCount) : 0;
+    return {
+      row: row,
+      homeId: homeId,
+      awayId: awayId,
+      leagueId: leagueId,
+      homeName: homeName,
+      awayName: awayName,
+      leagueName: row.leagueName || '',
+      marketKey: marketKey,
+      marketShort: shortLabel(marketKey),
+      marketFull: label(marketKey),
+      outcomes: outcomes,
+      bookmakerCount: isNaN(count) ? 0 : count,
+      bookmakerText: (isNaN(count) || count <= 0) ? 'Prix de consensus' : ('Consensus · ' + count + ' bookmakers')
+    };
+  });
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Marchés',
+  title: 'Meilleures cotes',
+  subtitle: 'Les meilleures cotes disponibles par match, marché par marché.'
+}) %>
+
+<% if (marketList.length > 0) { %>
+  <div class="ko-rail mb-5 -mx-3 px-3 md:mx-0 md:px-0">
+    <% marketList.forEach(function (m) { %>
+      <a href="/odds?market=<%= encodeURIComponent(m) %>"
+         aria-current="<%= m === current ? 'true' : 'false' %>"
+         class="ko-focus min-h-[44px] shrink-0 rounded-pill border px-4 text-[12px] font-semibold transition-colors duration-200 <%= m === current ? 'border-acid-500/50 bg-acid-500/12 text-acid-300' : 'border-line bg-ink-850 text-mist-300 hover:border-line-strong hover:text-mist-50' %>">
+        <span class="sm:hidden"><%= shortLabel(m) %></span>
+        <span class="hidden sm:inline"><%= label(m) %></span>
+      </a>
+    <% }); %>
+  </div>
+<% } %>
+
+<% if (prepared.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucune cote disponible', message: 'Aucun marché n’est coté pour la période demandée. Revenez plus tard.', icon: 'chart' }) %>
+<% } else { %>
+  <% /* MOBILE (< md) : une carte empilée par match — tête compétition,
+       équipes en toutes lettres, marché et cotes en lignes empilées.
+       Aucun défilement horizontal. */ %>
+  <ul class="md:hidden grid gap-3" aria-label="Meilleures cotes par match">
+    <% prepared.forEach(function (card) { %>
+      <%- include("partials/odds-card", { card: card }) %>
+    <% }); %>
+  </ul>
+
+  <% /* DESKTOP (>= md) : le tableau dense d'origine, inchangé. */ %>
+  <div class="hidden md:block overflow-x-auto border border-line bg-ink-900">
+    <table class="ko-table">
+      <thead>
+        <tr>
+          <th scope="col">Match</th>
+          <th scope="col" class="text-left">Compétition</th>
+          <th scope="col">Date</th>
+          <% const sampleOutcomes = prepared[0] ? prepared[0].outcomes : []; %>
+          <% sampleOutcomes.forEach(function (o) { %>
+            <th scope="col"><%= o.label %></th>
+          <% }); %>
+          <th scope="col">Prob. implicite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% prepared.forEach(function (card) { %>
+          <tr>
+            <td class="max-w-[240px]">
+              <a href="/match/<%= card.row.eventId %>" class="ko-focus flex items-center gap-1.5 text-left text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300">
+                <% if (card.homeId !== null) { %>
+                  <%- include("partials/logo", { id: card.homeId, name: card.homeName, kind: 'team', size: 'xs' }) %>
+                  <span class="max-w-[92px] truncate"><%= card.homeName %></span>
+                <% } else { %>
+                  <span class="max-w-[110px] truncate"><%= card.homeName %></span>
+                <% } %>
+                <span class="shrink-0 text-[10px] text-mist-500">vs</span>
+                <% if (card.awayId !== null) { %>
+                  <%- include("partials/logo", { id: card.awayId, name: card.awayName, kind: 'team', size: 'xs' }) %>
+                  <span class="max-w-[92px] truncate"><%= card.awayName %></span>
+                <% } else { %>
+                  <span class="max-w-[110px] truncate"><%= card.awayName %></span>
+                <% } %>
+              </a>
+            </td>
+            <td class="max-w-[180px] text-left">
+              <span class="flex items-center gap-1.5">
+                <% if (card.leagueId !== null) { %>
+                  <%- include("partials/logo", { id: card.leagueId, name: card.leagueName || '', kind: 'league', size: 'xs' }) %>
+                <% } %>
+                <span class="truncate text-[11px] text-mist-500"><%= card.leagueName %></span>
+              </span>
+              <% if (card.bookmakerCount > 0) { %>
+                <span class="mt-0.5 block text-[10px] text-mist-500" title="Nombre de bookmakers derrière le prix de consensus">· <%= card.bookmakerCount %> bookmakers</span>
+              <% } %>
+            </td>
+            <td class="ko-tabular text-[11px] text-mist-400"><%= fmt.date(card.row.date, { withTime: true }) %></td>
+            <% card.outcomes.forEach(function (o) { %>
+              <td class="ko-tabular">
+                <span class="font-display text-[15px] font-bold text-mist-50"><%= o.decimal === null ? '—' : o.decimal.toFixed(2) %></span>
+              </td>
+            <% }); %>
+            <td class="ko-tabular text-[11px] text-mist-400">
+              <% card.outcomes.forEach(function (o) { %>
+                <span class="mr-2"><%= fmt.percent(o.implied) %></span>
+              <% }); %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-[10px] text-mist-500">Cotes décimales, marché <%= current || '1x2' %> · probabilités implicites calculées à partir de la meilleure cote disponible.</p>
+<% } %>

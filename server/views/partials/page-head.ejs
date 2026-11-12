@@ -1,0 +1,23 @@
+<%
+  /* En-tête de page centré : surtitre + titre + sous-titre, puis actions.
+     Actions : centrées sous le titre (choix retenu — le bloc reste centré
+     sur mobile et desktop, la ligne d'actions est repliée au centre). */
+  const phEyebrow = (typeof eyebrow !== 'undefined' && eyebrow) ? eyebrow : '';
+  const phTitle = (typeof title !== 'undefined' && title) ? title : '';
+  const phSub = (typeof subtitle !== 'undefined' && subtitle) ? subtitle : '';
+  const phActions = (typeof actions !== 'undefined' && actions) ? actions : '';
+%>
+<div class="mb-5 border-b border-line pb-5">
+  <div class="mx-auto max-w-2xl text-center">
+    <% if (phEyebrow) { %>
+      <p class="ko-eyebrow mb-1.5 text-[11px] text-acid-400"><%= phEyebrow %></p>
+    <% } %>
+    <h1 class="font-display text-[26px] leading-none font-bold tracking-tight text-balance text-mist-50 md:text-[34px]"><%= phTitle %></h1>
+    <% if (phSub) { %>
+      <p class="mx-auto mt-2 max-w-2xl text-[13px] leading-relaxed text-pretty text-mist-400"><%= phSub %></p>
+    <% } %>
+  </div>
+  <% if (phActions) { %>
+    <div class="mt-4 flex flex-wrap items-center justify-center gap-2"><%- phActions %></div>
+  <% } %>
+</div>

@@ -1,0 +1,18 @@
+node_modules
+dist
+.cache
+public/css/app.css
+public/js/*.js
+.DS_Store
+npm-debug.log*
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+
+# --- Android / Capacitor ---------------------------------------------------
+# android/.gitignore couvre déjà build/, .gradle/, local.properties et les
+# assets copiés par « cap sync ». Ici : ce qui ne doit jamais être commité.
+*.jks
+*.keystore
+android/app/release/

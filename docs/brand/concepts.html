@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zoera — trois directions de logo</title>
+<style>
+  :root{
+    --ink-950:#06080b; --ink-900:#0a0d12; --ink-850:#0d121a; --ink-800:#121821;
+    --ink-750:#161d27; --ink-700:#1b2430; --line:#1d2632; --line-strong:#2b3846;
+    --mist-50:#f5f8fb; --mist-100:#e6ecf3; --mist-200:#b7c1cf; --mist-300:#8e9aab; --mist-400:#6c7889;
+    --acid-400:#cdf542; --acid-500:#b0dd24; --acid-950:#16210a;
+    --blood-500:#e5484d;
+    --font-display:"Archivo Expanded","Anton","Oswald","Arial Narrow","Liberation Sans Narrow",Impact,sans-serif;
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink-900); color:var(--mist-100);
+    font-family:var(--font-sans); font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:72px 72px; background-position:-1px -1px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px 96px}
+
+  /* ---------- en-tête ---------- */
+  header.top{border-bottom:1px solid var(--line);background:var(--ink-950)}
+  .top-in{max-width:1180px;margin:0 auto;padding:26px 28px 22px;display:flex;align-items:flex-start;gap:26px;flex-wrap:wrap}
+  .top h1{
+    font-family:var(--font-display);font-weight:800;letter-spacing:.01em;
+    font-size:34px;line-height:.95;margin:0;text-transform:uppercase;color:var(--mist-50)
+  }
+  .top h1 em{font-style:normal;color:var(--acid-400)}
+  .top p{margin:0;color:var(--mist-300);font-size:13px;max-width:46ch}
+  .tag{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-950);background:var(--acid-400);padding:5px 9px;border-radius:3px;font-weight:700
+  }
+  .meta{margin-left:auto;padding-top:2px;font-family:var(--font-mono);font-size:11px;color:var(--mist-400);text-align:right}
+  .meta b{color:var(--mist-200);font-weight:600}
+
+  /* ---------- sections ---------- */
+  section.dir{padding:46px 0 10px;border-bottom:1px solid var(--line)}
+  .dir-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .dir-head .num{
+    font-family:var(--font-display);font-size:52px;line-height:.8;font-weight:800;color:var(--ink-700);
+    letter-spacing:-.02em
+  }
+  .dir-head h2{
+    font-family:var(--font-display);font-size:27px;line-height:1;margin:0;text-transform:uppercase;
+    color:var(--mist-50);letter-spacing:.01em
+  }
+  .dir-head .kind{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--acid-400);border:1px solid rgba(205,245,66,.35);padding:4px 8px;border-radius:3px
+  }
+  .dir-head .file{font-family:var(--font-mono);font-size:11px;color:var(--mist-400)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  .card{background:var(--ink-800);border:1px solid var(--line);border-radius:12px;padding:16px 18px 18px}
+  .card h3{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--mist-400);margin:0 0 14px;font-weight:600
+  }
+  .sizes{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+  .sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px}
+  .sizes figcaption{font-family:var(--font-mono);font-size:10px;color:var(--mist-500)}
+  .sizes img{display:block;image-rendering:auto}
+  .tiles{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .tiles figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px}
+  .tiles figcaption{font-family:var(--font-mono);font-size:10px;color:var(--mist-500)}
+  .tile{background:var(--acid-400);color:var(--ink-950);border-radius:10px;padding:7px;display:block}
+  .lockbox{background:var(--ink-950);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+  .lockbox img{display:block;max-width:100%;height:auto}
+  .mono{color:var(--mist-50)}
+  .mono img,.mono svg{display:block;max-width:100%;height:auto}
+  .swatchrow{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+  .sw{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:10px;color:var(--mist-400)}
+  .sw i{width:13px;height:13px;border-radius:3px;display:block}
+  .rationale p{margin:0 0 10px;color:var(--mist-200);font-size:14.5px}
+  .rationale p:last-child{margin:0}
+  .rationale strong{color:var(--mist-50);font-weight:600}
+  .risk{border-left:2px solid var(--blood-500);padding-left:12px}
+  .risk b{color:var(--blood-500);font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:4px}
+
+  /* ---------- onglets ---------- */
+  .tabs{display:flex;gap:12px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line-strong);border-radius:9px;padding:11px 13px;display:flex;align-items:center;gap:11px}
+  .tab.dark{background:var(--ink-950)}
+  .tab.light{background:#e9eef4}
+  .tab span{font-family:var(--font-mono);font-size:10px;color:var(--mist-400)}
+  .tab.light span{color:#5b6675}
+
+  /* ---------- comparatif ---------- */
+  .compare{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+  .compare .card{display:flex;flex-direction:column;gap:14px}
+  .compare .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .compare .lbl{font-family:var(--font-mono);font-size:10px;color:var(--mist-500);width:100%}
+  .mini{background:var(--ink-950);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .mini img{display:block;max-width:100%;height:auto}
+  .note{font-family:var(--font-mono);font-size:11px;color:var(--mist-400);margin-top:18px}
+  code{font-family:var(--font-mono);font-size:11.5px;color:var(--acid-400);background:var(--acid-950);padding:1px 5px;border-radius:3px}
+  footer{margin-top:44px;padding-top:22px;border-top:1px solid var(--line);color:var(--mist-400);font-family:var(--font-mono);font-size:11px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  @media (max-width:900px){.grid,.compare{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div>
+      <span class="tag">Système de marque</span>
+      <h1>Zoe<em>ra</em> — trois directions de logo</h1>
+    </div>
+    <p>Trois constructions de signe, un seul système : fond sombre, un accent acide, typo condensée. Aucun symbole n'est une lettre dans une boîte.</p>
+    <div class="meta">
+      <b>docs/brand</b><br>
+      SVG pur · fait main · viewBox 24
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============================ 01 ============================ -->
+<section class="dir" id="d1">
+  <div class="dir-head">
+    <span class="num">01</span>
+    <h2>Le Z frappé</h2>
+    <span class="kind">Monogramme construit</span>
+    <span class="file">zoera-01-mark.svg · zoera-01.svg</span>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>Symbole seul</h3>
+      <div class="sizes">
+        <figure><img src="zoera-01-mark.svg" width="16" height="16" alt=""><figcaption>16</figcaption></figure>
+        <figure><img src="zoera-01-mark.svg" width="24" height="24" alt=""><figcaption>24</figcaption></figure>
+        <figure><img src="zoera-01-mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></figure>
+        <figure><img src="zoera-01-mark.svg" width="64" height="64" alt=""><figcaption>64</figcaption></figure>
+        <figure><img src="zoera-01-mark.svg" width="128" height="128" alt=""><figcaption>128</figcaption></figure>
+      </div>
+      <div class="swatchrow">
+        <span class="sw"><i style="background:#cdf542"></i>acide</span>
+        <span class="sw"><i style="background:#f5f8fb"></i>blanc</span>
+        <span class="sw"><i style="background:#e5484d"></i>rouge carton</span>
+        <span class="sw">fill = currentColor</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pastille acide · monochrome</h3>
+      <div class="tiles">
+        <figure>
+          <span class="tile">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#06080b" aria-label="Zoera 01 en pastille acide">
+              <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+              <circle cx="20.4" cy="3.6" r="2.7"/>
+            </svg>
+          </span>
+          <figcaption>32</figcaption>
+        </figure>
+        <figure>
+          <span class="tile">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+              <circle cx="20.4" cy="3.6" r="2.7"/>
+            </svg>
+          </span>
+          <figcaption>64</figcaption>
+        </figure>
+        <figure>
+          <span style="background:#f5f8fb;color:#06080b;border-radius:10px;padding:7px;display:block">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+              <circle cx="20.4" cy="3.6" r="2.7"/>
+            </svg>
+          </span>
+          <figcaption>pastille claire</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Lockup horizontal</h3>
+      <div class="lockbox"><img src="zoera-01.svg" alt="Zoera direction 01"></div>
+      <h3 style="margin-top:20px">Lockup monochrome (currentColor)</h3>
+      <div class="lockbox mono">
+        <svg viewBox="0 0 117 32" aria-label="Zoera 01 monochrome">
+          <g fill="currentColor" transform="translate(2 2) scale(1.166667)">
+            <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+            <circle cx="20.4" cy="3.6" r="2.7"/>
+          </g>
+          <g fill="currentColor" transform="translate(35.5 6) scale(1.428571)">
+            <path d="M0 0H9V2.5L3 11.5H9V14H0V11.5L6 2.5H0Z"/>
+            <path fill-rule="evenodd" d="M14.2 0H17.4A3.4 3.4 0 0 1 20.8 3.4V10.6A3.4 3.4 0 0 1 17.4 14H14.2A3.4 3.4 0 0 1 10.8 10.6V3.4A3.4 3.4 0 0 1 14.2 0ZM13.3 3.4A1.1 1.1 0 0 0 14.4 2.3H17.2A1.1 1.1 0 0 0 18.3 3.4V10.6A1.1 1.1 0 0 0 17.2 11.7H14.4A1.1 1.1 0 0 0 13.3 10.6Z"/>
+            <path d="M22.6 0H31.2V2.5H25.2V5.6H29.8V8.1H25.2V11.5H31.2V14H22.6Z"/>
+            <path fill-rule="evenodd" d="M33 0H38.9A3.9 3.9 0 0 1 38.9 7.8H35.6V14H33ZM35.6 2.5H39A1.3 1.3 0 0 1 39 5.1H35.6Z"/>
+            <path d="M38.2 7.8H41L42.8 14H39.6Z"/>
+            <path fill-rule="evenodd" d="M44.6 14L49 0H51.2L55.6 14H52.7L51.8 10.4H48.4L47.5 14ZM48.9 7.8H51.3L50.1 2.9Z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card rationale">
+      <h3>Lecture</h3>
+      <p><strong>Idée.</strong> Un Z dessiné à la main : barre haute courte, diagonale épaisse et légèrement désaxée, terminals coupés à 45° comme un trait de brosse. Le ballon est posé sur la ligne du haut : c'est le point de départ de la frappe, la diagonale est sa trajectoire.</p>
+      <p><strong>Ce que ça dit de Zoera.</strong> Un joueur qui frappe : le signe est l'image du geste, pas une initiale décorative. La coupe à 45° donne le rythme d'un Carnet de score — dense, jamais lisse.</p>
+      <p class="risk"><b>Limite</b>La lecture « ballon sur une lettre » est explicite mais un peu littérale ; à 16 px le ballon se réduit à un point. Le Z reste lisible, la footballisation repose sur le contexte.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 02 ============================ -->
+<section class="dir" id="d2">
+  <div class="dir-head">
+    <span class="num">02</span>
+    <h2>Le terrain en perspective</h2>
+    <span class="kind">Symbole football abstrait</span>
+    <span class="file">zoera-02-mark.svg · zoera-02.svg</span>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>Symbole seul</h3>
+      <div class="sizes">
+        <figure><img src="zoera-02-mark.svg" width="16" height="16" alt=""><figcaption>16</figcaption></figure>
+        <figure><img src="zoera-02-mark.svg" width="24" height="24" alt=""><figcaption>24</figcaption></figure>
+        <figure><img src="zoera-02-mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></figure>
+        <figure><img src="zoera-02-mark.svg" width="64" height="64" alt=""><figcaption>64</figcaption></figure>
+        <figure><img src="zoera-02-mark.svg" width="128" height="128" alt=""><figcaption>128</figcaption></figure>
+      </div>
+      <div class="swatchrow">
+        <span class="sw"><i style="background:#cdf542"></i>acide</span>
+        <span class="sw"><i style="background:#f5f8fb"></i>blanc</span>
+        <span class="sw"><i style="background:#e5484d"></i>rouge carton</span>
+        <span class="sw">fill = currentColor</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pastille acide · monochrome</h3>
+      <div class="tiles">
+        <figure>
+          <span class="tile">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#06080b" aria-label="Zoera 02 en pastille acide">
+              <path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/>
+              <rect x="2" y="17.4" width="20" height="2.6"/>
+              <rect x="6" y="6.8" width="2.4" height="3"/>
+              <rect x="19.6" y="12" width="2.4" height="5.4"/>
+            </svg>
+          </span>
+          <figcaption>32</figcaption>
+        </figure>
+        <figure>
+          <span class="tile">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/>
+              <rect x="2" y="17.4" width="20" height="2.6"/>
+              <rect x="6" y="6.8" width="2.4" height="3"/>
+              <rect x="19.6" y="12" width="2.4" height="5.4"/>
+            </svg>
+          </span>
+          <figcaption>64</figcaption>
+        </figure>
+        <figure>
+          <span style="background:#f5f8fb;color:#06080b;border-radius:10px;padding:7px;display:block">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/>
+              <rect x="2" y="17.4" width="20" height="2.6"/>
+              <rect x="6" y="6.8" width="2.4" height="3"/>
+              <rect x="19.6" y="12" width="2.4" height="5.4"/>
+            </svg>
+          </span>
+          <figcaption>pastille claire</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Lockup horizontal</h3>
+      <div class="lockbox"><img src="zoera-02.svg" alt="Zoera direction 02"></div>
+      <h3 style="margin-top:20px">Lockup monochrome (currentColor)</h3>
+      <div class="lockbox mono">
+        <svg viewBox="0 0 117 32" aria-label="Zoera 02 monochrome">
+          <g fill="currentColor" transform="translate(2 2) scale(1.166667)">
+            <path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/>
+            <rect x="2" y="17.4" width="20" height="2.6"/>
+            <rect x="6" y="6.8" width="2.4" height="3"/>
+            <rect x="19.6" y="12" width="2.4" height="5.4"/>
+          </g>
+          <g fill="currentColor" transform="translate(35.5 6) scale(1.428571)">
+            <path d="M0 0H9V2.5L3 11.5H9V14H0V11.5L6 2.5H0Z"/>
+            <path fill-rule="evenodd" d="M14.2 0H17.4A3.4 3.4 0 0 1 20.8 3.4V10.6A3.4 3.4 0 0 1 17.4 14H14.2A3.4 3.4 0 0 1 10.8 10.6V3.4A3.4 3.4 0 0 1 14.2 0ZM13.3 3.4A1.1 1.1 0 0 0 14.4 2.3H17.2A1.1 1.1 0 0 0 18.3 3.4V10.6A1.1 1.1 0 0 0 17.2 11.7H14.4A1.1 1.1 0 0 0 13.3 10.6Z"/>
+            <path d="M22.6 0H31.2V2.5H25.2V5.6H29.8V8.1H25.2V11.5H31.2V14H22.6Z"/>
+            <path fill-rule="evenodd" d="M33 0H38.9A3.9 3.9 0 0 1 38.9 7.8H35.6V14H33ZM35.6 2.5H39A1.3 1.3 0 0 1 39 5.1H35.6Z"/>
+            <path d="M38.2 7.8H41L42.8 14H39.6Z"/>
+            <path fill-rule="evenodd" d="M44.6 14L49 0H51.2L55.6 14H52.7L51.8 10.4H48.4L47.5 14ZM48.9 7.8H51.3L50.1 2.9Z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card rationale">
+      <h3>Lecture</h3>
+      <p><strong>Idée.</strong> Le terrain réduit à ses deux lignes : la ligne lointaine, courte et haute ; la ligne proche, longue et basse. La diagonale entre les deux est l'axe de jeu — une passe d'un but à l'autre. Deux poteaux, un petit et un grand, traduisent la perspective.</p>
+      <p><strong>Ce que ça dit de Zoera.</strong> Le signe est un plan de jeu, pas une lettre : il parle de terrain, de camps, de nulle part ailleurs. L'inégalité des deux lignes lui donne de la profondeur et de la vitesse sans aucun dégradé.</p>
+      <p class="risk"><b>Limite</b>Sans contexte, la diagonale peut se lire comme un simple « Z » ; c'est volontaire, mais le motif football est moins immédiat que le ballon de la direction 01. Les poteaux sont les éléments les plus fragiles à 16 px.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 03 ============================ -->
+<section class="dir" id="d3">
+  <div class="dir-head">
+    <span class="num">03</span>
+    <h2>Le Z tissé</h2>
+    <span class="kind">Signe malgache géométrisé</span>
+    <span class="file">zoera-03-mark.svg · zoera-03.svg</span>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>Symbole seul</h3>
+      <div class="sizes">
+        <figure><img src="zoera-03-mark.svg" width="16" height="16" alt=""><figcaption>16</figcaption></figure>
+        <figure><img src="zoera-03-mark.svg" width="24" height="24" alt=""><figcaption>24</figcaption></figure>
+        <figure><img src="zoera-03-mark.svg" width="32" height="32" alt=""><figcaption>32</figcaption></figure>
+        <figure><img src="zoera-03-mark.svg" width="64" height="64" alt=""><figcaption>64</figcaption></figure>
+        <figure><img src="zoera-03-mark.svg" width="128" height="128" alt=""><figcaption>128</figcaption></figure>
+      </div>
+      <div class="swatchrow">
+        <span class="sw"><i style="background:#cdf542"></i>acide</span>
+        <span class="sw"><i style="background:#f5f8fb"></i>blanc</span>
+        <span class="sw"><i style="background:#e5484d"></i>rouge carton</span>
+        <span class="sw">fill = currentColor</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pastille acide · monochrome</h3>
+      <div class="tiles">
+        <figure>
+          <span class="tile">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#06080b" aria-label="Zoera 03 en pastille acide">
+              <rect x="3.5" y="3" width="17" height="3.2"/>
+              <rect x="18.9" y="4.6" width="3.2" height="4.2"/>
+              <rect x="16.3" y="7.2" width="4.2" height="3.2"/>
+              <rect x="14.7" y="8.8" width="3.2" height="4.2"/>
+              <rect x="12.1" y="11.4" width="4.2" height="3.2"/>
+              <rect x="10.5" y="13" width="3.2" height="4.2"/>
+              <rect x="7.9" y="15.6" width="4.2" height="3.2"/>
+              <rect x="6.3" y="17.2" width="3.2" height="3.4"/>
+              <path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/>
+            </svg>
+          </span>
+          <figcaption>32</figcaption>
+        </figure>
+        <figure>
+          <span class="tile">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <rect x="3.5" y="3" width="17" height="3.2"/>
+              <rect x="18.9" y="4.6" width="3.2" height="4.2"/>
+              <rect x="16.3" y="7.2" width="4.2" height="3.2"/>
+              <rect x="14.7" y="8.8" width="3.2" height="4.2"/>
+              <rect x="12.1" y="11.4" width="4.2" height="3.2"/>
+              <rect x="10.5" y="13" width="3.2" height="4.2"/>
+              <rect x="7.9" y="15.6" width="4.2" height="3.2"/>
+              <rect x="6.3" y="17.2" width="3.2" height="3.4"/>
+              <path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/>
+            </svg>
+          </span>
+          <figcaption>64</figcaption>
+        </figure>
+        <figure>
+          <span style="background:#f5f8fb;color:#06080b;border-radius:10px;padding:7px;display:block">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="#06080b" aria-label="">
+              <rect x="3.5" y="3" width="17" height="3.2"/>
+              <rect x="18.9" y="4.6" width="3.2" height="4.2"/>
+              <rect x="16.3" y="7.2" width="4.2" height="3.2"/>
+              <rect x="14.7" y="8.8" width="3.2" height="4.2"/>
+              <rect x="12.1" y="11.4" width="4.2" height="3.2"/>
+              <rect x="10.5" y="13" width="3.2" height="4.2"/>
+              <rect x="7.9" y="15.6" width="4.2" height="3.2"/>
+              <rect x="6.3" y="17.2" width="3.2" height="3.4"/>
+              <path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/>
+            </svg>
+          </span>
+          <figcaption>pastille claire</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Lockup horizontal</h3>
+      <div class="lockbox"><img src="zoera-03.svg" alt="Zoera direction 03"></div>
+      <h3 style="margin-top:20px">Lockup monochrome (currentColor)</h3>
+      <div class="lockbox mono">
+        <svg viewBox="0 0 117 32" aria-label="Zoera 03 monochrome">
+          <g fill="currentColor" transform="translate(2 2) scale(1.166667)">
+            <rect x="3.5" y="3" width="17" height="3.2"/>
+            <rect x="18.9" y="4.6" width="3.2" height="4.2"/>
+            <rect x="16.3" y="7.2" width="4.2" height="3.2"/>
+            <rect x="14.7" y="8.8" width="3.2" height="4.2"/>
+            <rect x="12.1" y="11.4" width="4.2" height="3.2"/>
+            <rect x="10.5" y="13" width="3.2" height="4.2"/>
+            <rect x="7.9" y="15.6" width="4.2" height="3.2"/>
+            <rect x="6.3" y="17.2" width="3.2" height="3.4"/>
+            <path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/>
+          </g>
+          <g fill="currentColor" transform="translate(35.5 6) scale(1.428571)">
+            <path d="M0 0H9V2.5L3 11.5H9V14H0V11.5L6 2.5H0Z"/>
+            <path fill-rule="evenodd" d="M14.2 0H17.4A3.4 3.4 0 0 1 20.8 3.4V10.6A3.4 3.4 0 0 1 17.4 14H14.2A3.4 3.4 0 0 1 10.8 10.6V3.4A3.4 3.4 0 0 1 14.2 0ZM13.3 3.4A1.1 1.1 0 0 0 14.4 2.3H17.2A1.1 1.1 0 0 0 18.3 3.4V10.6A1.1 1.1 0 0 0 17.2 11.7H14.4A1.1 1.1 0 0 0 13.3 10.6Z"/>
+            <path d="M22.6 0H31.2V2.5H25.2V5.6H29.8V8.1H25.2V11.5H31.2V14H22.6Z"/>
+            <path fill-rule="evenodd" d="M33 0H38.9A3.9 3.9 0 0 1 38.9 7.8H35.6V14H33ZM35.6 2.5H39A1.3 1.3 0 0 1 39 5.1H35.6Z"/>
+            <path d="M38.2 7.8H41L42.8 14H39.6Z"/>
+            <path fill-rule="evenodd" d="M44.6 14L49 0H51.2L55.6 14H52.7L51.8 10.4H48.4L47.5 14ZM48.9 7.8H51.3L50.1 2.9Z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card rationale">
+      <h3>Lecture</h3>
+      <p><strong>Idée.</strong> Le Z redessiné en marche d'escalier : la diagonale devient un ruban qui change d'axe, comme le motif en gradins du tissage malgache (akotofahana) et comme un joueur qui feinte et change de direction. Un seul terminal est coupé à 45°, comme une plante du pied.</p>
+      <p><strong>Ce que ça dit de Zoera.</strong> C'est la direction la plus malgache des trois : elle prend un motif vernaculaire — le gradin — et le traite en géométrie de sport, sans folklore ni figure humaine. Purement orthogonal, elle s'accorde au tableau de scores.</p>
+      <p class="risk"><b>Limite</b>C'est le signe le plus abstrait : le Z ne se lit qu'à partir de 24 px, et le motif tissé ne parle qu'à qui connaît. Aucun élément de football explicite ; le nom porte seul la charge.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ onglets ============================ -->
+<section class="dir" id="tabs">
+  <div class="dir-head">
+    <span class="num">▣</span>
+    <h2>Test onglet</h2>
+    <span class="kind">Fond clair / fond sombre</span>
+  </div>
+  <div class="card">
+    <h3>Favicon recommandé — la pastille acide (16 / 32 px)</h3>
+    <p class="note" style="margin:-4px 0 14px">Un pavé acide plein reste lisible sur onglet clair comme sur onglet sombre : c'est la seule forme qui ne dépend pas du fond.</p>
+    <div class="tabs">
+      <div class="tab light">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></g></svg>
+        </span>
+        <span>01 clair</span>
+      </div>
+      <div class="tab light">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></g></svg>
+        </span>
+        <span>02 clair</span>
+      </div>
+      <div class="tab light">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></g></svg>
+        </span>
+        <span>03 clair</span>
+      </div>
+      <div class="tab dark">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></g></svg>
+        </span>
+        <span>01 sombre</span>
+      </div>
+      <div class="tab dark">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></g></svg>
+        </span>
+        <span>02 sombre</span>
+      </div>
+      <div class="tab dark">
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></g></svg>
+        </span>
+        <span class="tile" style="padding:2px;border-radius:3px">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-label=""><rect width="24" height="24" rx="5.5" fill="#cdf542"/><g fill="#06080b"><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></g></svg>
+        </span>
+        <span>03 sombre</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:26px">Symbole nu — couleur pilotée par currentColor</h3>
+    <div class="tabs">
+      <div class="tab light" style="color:#06080b">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></svg>
+        <span>01 · encre</span>
+      </div>
+      <div class="tab light" style="color:#06080b">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></svg>
+        <span>02 · encre</span>
+      </div>
+      <div class="tab light" style="color:#06080b">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></svg>
+        <span>03 · encre</span>
+      </div>
+      <div class="tab dark" style="color:#cdf542">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/><circle cx="20.4" cy="3.6" r="2.7"/></svg>
+        <span>01 · acide</span>
+      </div>
+      <div class="tab dark" style="color:#cdf542">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><path d="M6 4.2H18V6.8H12.4L2 17.4H7.6L18 6.8H6Z"/><rect x="2" y="17.4" width="20" height="2.6"/><rect x="6" y="6.8" width="2.4" height="3"/><rect x="19.6" y="12" width="2.4" height="5.4"/></svg>
+        <span>02 · acide</span>
+      </div>
+      <div class="tab dark" style="color:#cdf542">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label=""><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-label=""><rect x="3.5" y="3" width="17" height="3.2"/><rect x="18.9" y="4.6" width="3.2" height="4.2"/><rect x="16.3" y="7.2" width="4.2" height="3.2"/><rect x="14.7" y="8.8" width="3.2" height="4.2"/><rect x="12.1" y="11.4" width="4.2" height="3.2"/><rect x="10.5" y="13" width="3.2" height="4.2"/><rect x="7.9" y="15.6" width="4.2" height="3.2"/><rect x="6.3" y="17.2" width="3.2" height="3.4"/><path d="M7.9 19H19.3L20.5 20.2V22.2H7.9Z"/></svg>
+        <span>03 · acide</span>
+      </div>
+    </div>
+    <p class="note">Les fichiers <code>*-mark.svg</code> sont en <code>fill="currentColor"</code> : ils prennent la couleur du texte ou du conteneur. Leur racine porte <code>color="#cdf542"</code> pour que le fichier soit déjà correct quand il est référencé en <code>&lt;img&gt;</code> ; en <code>&lt;svg&gt;</code> inline, il suffit de surcharger <code>color</code>.</p>
+  </div>
+</section>
+
+<!-- ============================ comparatif ============================ -->
+<section class="dir" id="cmp">
+  <div class="dir-head">
+    <span class="num">≡</span>
+    <h2>Comparatif</h2>
+    <span class="kind">Les trois en un coup d'œil</span>
+  </div>
+  <div class="compare">
+    <div class="card">
+      <div class="row"><span class="lbl">Symbole · acide</span>
+        <img src="zoera-01-mark.svg" width="72" height="72" alt="">
+      </div>
+      <div class="row"><span class="lbl">Lockup</span>
+        <div class="mini"><img src="zoera-01.svg" alt=""></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row"><span class="lbl">Symbole · acide</span>
+        <img src="zoera-02-mark.svg" width="72" height="72" alt="">
+      </div>
+      <div class="row"><span class="lbl">Lockup</span>
+        <div class="mini"><img src="zoera-02.svg" alt=""></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row"><span class="lbl">Symbole · acide</span>
+        <img src="zoera-03-mark.svg" width="72" height="72" alt="">
+      </div>
+      <div class="row"><span class="lbl">Lockup</span>
+        <div class="mini"><img src="zoera-03.svg" alt=""></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">
+    Fichiers : <code>zoera-01.svg</code> / <code>zoera-02.svg</code> / <code>zoera-03.svg</code> (lockups bicolores) ·
+    <code>zoera-01-mark.svg</code> / <code>zoera-02-mark.svg</code> / <code>zoera-03-mark.svg</code> (symboles seuls, currentColor).
+    Les logotypes sont dessinés en tracés : aucune dépendance à une police installée.
+  </p>
+</section>
+
+<footer>
+  <span>Zoera · direction artistique · docs/brand</span>
+  <span>fond #0a0d12 · accent #cdf542 · texte #f5f8fb · rouge carton #e5484d</span>
+</footer>
+
+</div>
+</body>
+</html>

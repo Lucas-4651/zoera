@@ -1,0 +1,670 @@
+<%
+  const ev = event;
+  const evStats = stats || null;
+  const evLineups = lineups || null;
+  const evIncidents = incidents || [];
+  const evCommentary = commentary || [];
+  const evH2h = h2h || null;
+  const evOdds = odds || null;
+  const evPrediction = prediction || null;
+  const evAvailability = availability || null;
+  const evPlayers = playerStats || [];
+  const st = fmt.status(ev.status);
+  const isLive = !!ev.isLive || st.live;
+
+  const hT = (ev.homeScoreHt !== null && ev.homeScoreHt !== undefined) ? ev.homeScoreHt : null;
+  const aT = (ev.awayScoreHt !== null && ev.awayScoreHt !== undefined) ? ev.awayScoreHt : null;
+  const et = ev.extraTime || null;
+  const pen = ev.penaltyShootout || null;
+  const hasScore = (ev.homeScore !== null && ev.homeScore !== undefined && ev.awayScore !== null && ev.awayScore !== undefined);
+  const scoreText = hasScore || isLive ? ((ev.homeScore || 0) + ' – ' + (ev.awayScore || 0)) : '–';
+
+  let scoreNote = '';
+  if (pen) scoreNote = 'Séparations ' + pen.home + '–' + pen.away;
+  else if (et) scoreNote = 'Prolongations ' + et.home + '–' + et.away;
+  else if (isLive && ev.period) scoreNote = fmt.period(ev.period);
+  else if (hT !== null && aT !== null) scoreNote = 'Mi-temps ' + hT + '–' + aT;
+
+  const venueName = (venue && typeof venue === 'object' && venue.name) ? venue.name : null;
+  const refereeName = (referee && typeof referee === 'object' && referee.name) ? referee.name : null;
+
+  // --- Momentum : graphique SVG ---
+  const momentum = (evStats && evStats.momentum) ? evStats.momentum : [];
+  let momentumPath = '';
+  let momentumDots = '';
+  let momentumEmpty = true;
+  if (momentum.length > 1) {
+    const hasNeg = momentum.some(function (p) { return p.value < 0; });
+    const pts = momentum.map(function (p) {
+      return { minute: p.minute, v: hasNeg ? p.value : (p.value - 50) };
+    });
+    const maxMin = Math.max.apply(null, pts.map(function (p) { return p.minute; })) || 90;
+    const maxAbs = Math.max.apply(null, pts.map(function (p) { return Math.abs(p.v); })) || 1;
+    const coords = pts.map(function (p) {
+      const x = 2 + (p.minute / maxMin) * 96;
+      const y = 30 - (p.v / maxAbs) * 26;
+      return { x: x, y: y, v: p.v, minute: p.minute };
+    });
+    momentumPath = 'M ' + coords.map(function (c) { return c.x.toFixed(2) + ' ' + c.y.toFixed(2); }).join(' L ');
+    momentumDots = coords.map(function (c) {
+      const cls = c.v >= 0 ? 'fill-acid-400' : 'fill-blood-400';
+      return '<circle cx="' + c.x.toFixed(2) + '" cy="' + c.y.toFixed(2) + '" r="1.1" class="' + cls + '"/>';
+    }).join('');
+    momentumEmpty = false;
+  }
+
+  // --- Shotmap : terrain SVG ---
+  const shots = (evStats && evStats.shotmap) ? evStats.shotmap : [];
+  const placedShots = shots.filter(function (s) { return s.x !== null && s.y !== null && s.x !== undefined && s.y !== undefined; });
+  const shotDots = placedShots.map(function (s) {
+    // Les coordonnées sont relatives à l'équipe qui attaque : on retourne le camp
+    // adverse pour que les tirs des deux équipes se superposent sur le même terrain.
+    const xRatio = s.home ? (s.x / 100) : (1 - s.x / 100);
+    const px = xRatio * 105;
+    const py = (s.y / 100) * 68;
+    const key = ((s.gtype || '') + ' ' + (s.type || '') + ' ' + (s.sit || '')).toLowerCase();
+    let cls = 'fill-mist-400/70';
+    let r = 1.1;
+    if (key.indexOf('goal') !== -1) { cls = 'fill-acid-400'; r = 1.5; }
+    else if (key.indexOf('post') !== -1 || key.indexOf('wood') !== -1) { cls = 'fill-amber-400'; r = 1.3; }
+    else if (key.indexOf('save') !== -1) { cls = 'fill-mist-200'; r = 1.2; }
+    else if (key.indexOf('miss') !== -1 || key.indexOf('off') !== -1 || key.indexOf('out') !== -1) { cls = 'fill-blood-400/70'; r = 1.1; }
+    return '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="' + r + '" class="' + cls + '"><title>' +
+      (s.playerName || 'Tir') + ' — ' + s.minute + "'" + ' (' + (s.xg !== null && s.xg !== undefined ? Number(s.xg).toFixed(2) : '—') + ' xG)</title></circle>';
+  }).join('');
+
+  // --- Classement : mise en avant des deux équipes ---
+  const standingRows = (standings && standings.flat) ? standings.flat : [];
+  const homeTeamId = ev.homeTeamId;
+  const awayTeamId = ev.awayTeamId;
+
+  const tabs = [
+    { id: 'stats', label: 'Statistiques' },
+    { id: 'lineups', label: 'Compositions' },
+    { id: 'timeline', label: 'Chronologie' },
+    { id: 'commentary', label: 'Commentaire' },
+    { id: 'h2h', label: 'Confrontation' },
+    { id: 'odds', label: 'Cotes' },
+    { id: 'prediction', label: 'Prédiction' },
+    { id: 'standings', label: 'Positions' }
+  ];
+%>
+
+<!-- ===================== EN-TÊTE ===================== -->
+<section class="relative mb-5 overflow-hidden border border-line bg-ink-850">
+  <div class="pointer-events-none absolute inset-0" aria-hidden="true"
+       style="background-image:radial-gradient(80% 100% at 50% -10%,rgba(205,245,66,.07),transparent 60%);"></div>
+
+  <div class="relative flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5 text-[11px] text-mist-400 md:px-5">
+    <a href="/leagues/<%= ev.leagueId %>" class="ko-focus flex min-w-0 items-center gap-2 transition-colors duration-200 hover:text-acid-300">
+      <% if (ev.leagueId) { %>
+        <%- include("partials/logo", { id: ev.leagueId, name: ev.leagueName || '', kind: 'league', size: 'xs' }) %>
+      <% } %>
+      <span class="truncate font-semibold text-mist-200"><%= ev.leagueName || 'Compétition' %></span>
+    </a>
+    <% if (ev.roundLabel) { %><span class="text-mist-600">·</span><span class="truncate"><%= ev.roundLabel %></span><% } %>
+    <% if (ev.stage) { %><span class="text-mist-600">·</span><span class="truncate"><%= ev.stage %></span><% } %>
+    <div class="ml-auto flex items-center gap-1.5">
+      <button type="button" data-fav="match:<%= ev.id %>" aria-pressed="false" aria-label="Ajouter ce match aux favoris"
+              class="ko-focus grid h-9 w-9 place-items-center rounded-[9px] border border-line bg-ink-800 text-mist-400 transition-colors duration-200 hover:text-acid-300">
+        <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6l2.6 5.5 5.9.8-4.3 4.2 1 6-5.2-2.9-5.2 2.9 1-6L3.5 9.9l5.9-.8z"/></svg>
+      </button>
+      <button type="button" data-copy-link aria-label="Copier le lien du match"
+              class="ko-focus grid h-9 w-9 place-items-center rounded-[9px] border border-line bg-ink-800 text-mist-400 transition-colors duration-200 hover:text-acid-300">
+        <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 6.5V5.5A1.5 1.5 0 0 0 13.5 4h-8A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15h1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 py-6 md:gap-8 md:px-8 md:py-9">
+    <!-- Dom -->
+    <div class="flex min-w-0 flex-col items-center gap-2 text-center md:gap-3">
+      <%- include("partials/logo", { id: ev.homeTeamId, name: ev.homeTeam, kind: 'team', size: 'lg' }) %>
+      <a href="/teams/<%= ev.homeTeamId %>" class="ko-focus max-w-full truncate font-display text-[16px] leading-tight font-bold text-mist-50 transition-colors duration-200 hover:text-acid-300 md:text-[22px]"><%= ev.homeTeam %></a>
+    </div>
+
+    <!-- SCORE -->
+    <div class="flex flex-col items-center px-1 text-center"
+         data-live-match data-event-id="<%= ev.id %>" data-status="<%= ev.status %>"
+         data-minute="<%= ev.minute === null || ev.minute === undefined ? '' : ev.minute %>"
+         data-home-score="<%= ev.homeScore === null || ev.homeScore === undefined ? '' : ev.homeScore %>"
+         data-away-score="<%= ev.awayScore === null || ev.awayScore === undefined ? '' : ev.awayScore %>">
+      <span class="ko-tabular font-display text-[44px] leading-none font-bold tracking-tight <%= isLive ? 'text-acid-300' : 'text-mist-50' %> md:text-[76px]" data-live-score><%= scoreText %></span>
+      <span class="mt-2 flex items-center gap-2">
+        <% if (isLive) { %>
+          <span class="ko-live-dot" aria-hidden="true"></span>
+          <span class="ko-tabular font-display text-[15px] font-bold text-acid-300" data-live-minute><%= ev.minute !== null && ev.minute !== undefined ? ev.minute + "'" : '' %></span>
+        <% } else { %>
+          <span class="text-[12px] font-semibold tracking-wide uppercase" data-live-status><%= st.label %></span>
+        <% } %>
+      </span>
+      <% if (scoreNote) { %>
+        <span class="mt-1 text-[11px] text-mist-500"><%= scoreNote %></span>
+      <% } %>
+      <span class="ko-tabular mt-1 text-[11px] text-mist-500"><%= fmt.date(ev.date, { withTime: true }) %></span>
+    </div>
+
+    <!-- Ext -->
+    <div class="flex min-w-0 flex-col items-center gap-2 text-center md:gap-3">
+      <%- include("partials/logo", { id: ev.awayTeamId, name: ev.awayTeam, kind: 'team', size: 'lg' }) %>
+      <a href="/teams/<%= ev.awayTeamId %>" class="ko-focus max-w-full truncate font-display text-[16px] leading-tight font-bold text-mist-50 transition-colors duration-200 hover:text-acid-300 md:text-[22px]"><%= ev.awayTeam %></a>
+    </div>
+  </div>
+
+  <!-- Infos contextuelles -->
+  <div class="relative flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line px-3 py-3 text-[11px] text-mist-400 md:px-8">
+    <% if (venueName) { %><span class="inline-flex items-center gap-1.5"><span class="text-mist-500">Stade</span> <%= venueName %></span><% } %>
+    <% if (refereeName) { %><span class="inline-flex items-center gap-1.5"><span class="text-mist-500">Arbitre</span> <%= refereeName %></span><% } %>
+    <% if (ev.attendance) { %><span class="ko-tabular inline-flex items-center gap-1.5"><span class="text-mist-500">Spectateurs</span> <%= fmt.number(ev.attendance) %></span><% } %>
+    <% if (ev.isLocalDerby) { %><span class="inline-flex items-center gap-1.5 rounded-pill border border-blood-500/40 bg-blood-500/10 px-2 py-0.5 font-semibold text-blood-300">Derby</span><% } %>
+    <% if (evAvailability && evAvailability.stat_keys && evAvailability.stat_keys.length) { %>
+      <span class="inline-flex flex-wrap items-center gap-1.5">
+        <span class="text-mist-500">Données</span>
+        <% evAvailability.stat_keys.slice(0, 6).forEach(function (k) { %>
+          <span class="rounded-pill border border-line bg-ink-800 px-2 py-0.5 text-[10px] text-mist-300"><%= k %></span>
+        <% }); %>
+      </span>
+    <% } %>
+  </div>
+</section>
+
+<!-- ===================== ONGLETS ===================== -->
+<div data-tabs class="mb-5">
+  <div role="tablist" aria-label="Sections du match" class="ko-rail border-b border-line md:mx-0 md:px-0">
+    <% tabs.forEach(function (t, i) { %>
+      <button type="button" role="tab" id="tab-<%= t.id %>" data-tab-target="<%= t.id %>"
+              aria-controls="panel-<%= t.id %>" aria-selected="<%= i === 0 ? 'true' : 'false' %>"
+              tabindex="<%= i === 0 ? '0' : '-1' %>"
+              class="ko-focus min-h-[44px] shrink-0 border-b-2 border-transparent px-3.5 text-[13px] font-semibold text-mist-400 hover:text-mist-100">
+        <%= t.label %>
+      </button>
+    <% }); %>
+  </div>
+
+  <!-- ---------- STATISTIQUES ---------- -->
+  <section role="tabpanel" id="panel-stats" data-tab-panel="stats" aria-labelledby="tab-stats" class="pt-5">
+    <% if (!evStats) { %>
+      <%- include("partials/empty-state", { title: 'Statistiques indisponibles', message: 'Les statistiques de ce match ne sont pas encore publiées.', icon: 'chart' }) %>
+    <% } else { %>
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div>
+          <%- include("partials/section-head", { title: 'Comparatif' }) %>
+
+          <% const statRows = [
+            { key: 'possession', label: 'Possession', unit: '%' },
+            { key: 'shots', label: 'Tirs' },
+            { key: 'shotsOnTarget', label: 'Tirs cadrés' },
+            { key: 'xg', label: 'xG (espérance de but)', dec: 2 },
+            { key: 'xgot', label: 'xGOT', dec: 2 },
+            { key: 'corners', label: 'Corners' },
+            { key: 'fouls', label: 'Fautes' },
+            { key: 'offsides', label: 'Hors-jeu' },
+            { key: 'yellowCards', label: 'Cartons jaunes' },
+            { key: 'redCards', label: 'Cartons rouges' },
+            { key: 'passes', label: 'Passes' },
+            { key: 'accuratePasses', label: 'Passes réussies' },
+            { key: 'tackles', label: 'Tacles' },
+            { key: 'bigChances', label: 'Grosses occasions' },
+            { key: 'saves', label: 'Arrêts' }
+          ]; %>
+
+          <ul class="border border-line bg-ink-900">
+            <% statRows.forEach(function (row) { %>
+              <% const hv = evStats.home ? evStats.home[row.key] : null; const av = evStats.away ? evStats.away[row.key] : null; %>
+              <% if (hv !== null && hv !== undefined || av !== null && av !== undefined) { %>
+                <li class="border-b border-line/70 last:border-b-0">
+                  <div class="flex items-center justify-between gap-2 px-3 pt-2 pb-1 text-[12px]">
+                    <span class="ko-tabular w-10 text-right font-display text-[15px] font-bold text-mist-50"><%= hv === null || hv === undefined ? '—' : (row.dec ? Number(hv).toFixed(row.dec) : hv) %></span>
+                    <span class="min-w-0 flex-1 text-center text-[11px] tracking-wide text-mist-400 uppercase"><%= row.label %></span>
+                    <span class="ko-tabular w-10 text-left font-display text-[15px] font-bold text-mist-50"><%= av === null || av === undefined ? '—' : (row.dec ? Number(av).toFixed(row.dec) : av) %></span>
+                  </div>
+                  <% if (row.key === 'possession' && hv !== null && av !== null && (hv + av) > 0) { %>
+                    <div class="flex h-1.5 gap-0.5 px-3 pb-2" aria-hidden="true">
+                      <span class="bg-acid-500" style="width:<%= Math.round((hv / (hv + av)) * 100) %>%"></span>
+                      <span class="bg-blood-500/70" style="width:<%= Math.round((av / (hv + av)) * 100) %>%"></span>
+                    </div>
+                  <% } else if (hv !== null && av !== null && (hv + av) > 0 && row.key !== 'possession') { %>
+                    <div class="flex h-1.5 gap-0.5 px-3 pb-2" aria-hidden="true">
+                      <span class="bg-ink-600" style="width:<%= Math.round((hv / (hv + av)) * 100) %>%"></span>
+                      <span class="bg-ink-700" style="width:<%= Math.round((av / (hv + av)) * 100) %>%"></span>
+                    </div>
+                  <% } %>
+                </li>
+              <% } %>
+            <% }); %>
+          </ul>
+          <% if (evStats.xgEstimated) { %>
+            <p class="mt-2 text-[10px] text-mist-500">Certaines valeurs xG sont estimées par le modèle (source sans prix de tir).</p>
+          <% } %>
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <!-- Momentum -->
+          <div>
+            <%- include("partials/section-head", { title: 'Dynamique du match' }) %>
+            <% if (momentumEmpty) { %>
+              <div class="border border-dashed border-line-strong bg-ink-850/60 px-4 py-8 text-center text-[12px] text-mist-500">Pas encore de courbe de dynamique.</div>
+            <% } else { %>
+              <div class="border border-line bg-ink-900 p-3">
+                <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="h-[150px] w-full" role="img" aria-label="Courbe de dynamique du match">
+                  <defs>
+                    <linearGradient id="mom-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(205,245,66,0.22)"/>
+                      <stop offset="100%" stop-color="rgba(205,245,66,0)"/>
+                    </linearGradient>
+                  </defs>
+                  <line x1="0" y1="30" x2="100" y2="30" stroke="#2b3846" stroke-width="0.4" stroke-dasharray="2 2"/>
+                  <path d="<%= momentumPath %> L 98 30 L 2 30 Z" fill="url(#mom-fill)"/>
+                  <path d="<%= momentumPath %>" fill="none" stroke="#cdf542" stroke-width="0.9" vector-effect="non-scaling-stroke"/>
+                  <%- momentumDots %>
+                </svg>
+                <div class="mt-1 flex justify-between text-[10px] text-mist-500">
+                  <span>0'</span><span>Domination</span><span>90'</span>
+                </div>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Shotmap -->
+          <div>
+            <%- include("partials/section-head", { title: 'Carte des tirs' }) %>
+            <% if (placedShots.length === 0) { %>
+              <div class="border border-dashed border-line-strong bg-ink-850/60 px-4 py-8 text-center text-[12px] text-mist-500">Aucune coordonnée de tir disponible.</div>
+            <% } else { %>
+              <div class="border border-line bg-ink-900 p-3">
+                <svg viewBox="0 0 105 68" class="h-auto w-full" role="img" aria-label="Position des tirs sur le terrain">
+                  <rect x="0.6" y="0.6" width="103.8" height="66.8" fill="none" stroke="#2b3846" stroke-width="0.8"/>
+                  <line x1="52.5" y1="0.6" x2="52.5" y2="67.4" stroke="#2b3846" stroke-width="0.8"/>
+                  <circle cx="52.5" cy="34" r="9.15" fill="none" stroke="#2b3846" stroke-width="0.8"/>
+                  <rect x="0.6" y="20.4" width="12" height="27.2" fill="none" stroke="#2b3846" stroke-width="0.8"/>
+                  <rect x="92.4" y="20.4" width="12" height="27.2" fill="none" stroke="#2b3846" stroke-width="0.8"/>
+                  <%- shotDots %>
+                </svg>
+                <div class="mt-2 flex flex-wrap gap-3 text-[10px] text-mist-500">
+                  <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-acid-400"></span>But</span>
+                  <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-mist-200"></span>Arrêt</span>
+                  <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-400"></span>Barre</span>
+                  <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-blood-400/70"></span>Hors cadre</span>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meilleurs joueurs -->
+      <% if (evPlayers.length) { %>
+        <div class="mt-6">
+          <%- include("partials/section-head", {
+            title: 'Performances individuelles',
+            meta: '<span class="ko-tabular text-[11px] text-mist-500">' + evPlayers.length + ' joueur' + (evPlayers.length > 1 ? 's' : '') + '</span>'
+          }) %>
+          <div class="overflow-x-auto border border-line bg-ink-900">
+            <table class="ko-table">
+              <thead>
+                <tr>
+                  <th scope="col">Joueur</th>
+                  <th scope="col">Équipe</th>
+                  <th scope="col">Min</th>
+                  <th scope="col">Note</th>
+                  <th scope="col">Buts</th>
+                  <th scope="col">Passes</th>
+                  <th scope="col">xG</th>
+                  <th scope="col">Tirs</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% evPlayers.slice().sort(function (a, b) { return (b.rating || 0) - (a.rating || 0); }).slice(0, 10).forEach(function (p) { %>
+                  <tr>
+                    <td class="max-w-[170px]">
+                      <a href="/players/<%= p.playerId %>" class="ko-focus flex min-w-0 items-center gap-2 text-mist-100 transition-colors duration-200 hover:text-acid-300">
+                        <%- include("partials/logo", { id: p.playerId, name: p.playerName || '', kind: 'player', size: 'xs', round: true }) %>
+                        <span class="truncate"><%= p.playerName || ('#' + p.playerId) %></span>
+                      </a>
+                    </td>
+                    <td class="max-w-[160px] truncate">
+                      <a href="/teams/<%= p.teamId %>" class="ko-focus flex items-center justify-end gap-2 text-mist-400 transition-colors duration-200 hover:text-acid-300">
+                        <span class="truncate"><%= p.teamName || ('#' + p.teamId) %></span>
+                        <%- include("partials/logo", { id: p.teamId, name: p.teamName || '', kind: 'team', size: 'xs' }) %>
+                      </a>
+                    </td>
+                    <td class="ko-tabular text-mist-300"><%= p.minutesPlayed %></td>
+                    <td class="ko-tabular font-bold <%= (p.rating || 0) >= 7 ? 'text-acid-300' : 'text-mist-100' %>"><%= p.rating === null || p.rating === undefined ? '—' : p.rating %></td>
+                    <td class="ko-tabular text-mist-100"><%= p.goals %></td>
+                    <td class="ko-tabular text-mist-300"><%= p.assists %></td>
+                    <td class="ko-tabular text-mist-300"><%= p.xg === null || p.xg === undefined ? '—' : Number(p.xg).toFixed(2) %></td>
+                    <td class="ko-tabular text-mist-300"><%= p.shots %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+  </section>
+
+  <!-- ---------- COMPOSITIONS ---------- -->
+  <section role="tabpanel" id="panel-lineups" data-tab-panel="lineups" aria-labelledby="tab-lineups" class="pt-5" hidden>
+    <% if (!evLineups) { %>
+      <%- include("partials/empty-state", { title: 'Compositions indisponibles', message: 'Les compositions ne sont pas encore publiées pour cette rencontre.', icon: 'calendar' }) %>
+    <% } else { %>
+      <div class="mb-4 flex flex-wrap items-center gap-2 text-[11px] text-mist-400">
+        <span class="rounded-pill border border-line bg-ink-850 px-2.5 py-1 font-semibold <%= evLineups.status === 'confirmed' ? 'text-acid-300' : (evLineups.status === 'predicted' ? 'text-amber-400' : 'text-mist-400') %>">
+          <%= evLineups.status === 'confirmed' ? 'Compositions officielles' : (evLineups.status === 'predicted' ? 'Compositions estimées (IA)' : 'Compositions indisponibles') %>
+        </span>
+        <% if (evLineups.updatedAt) { %><span class="ko-tabular">Mises à jour : <%= fmt.ago(evLineups.updatedAt) %></span><% } %>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <% [['dom', ev.homeTeam, ev.homeTeamId, evLineups.home, evLineups.homeFormation],
+           ['ext', ev.awayTeam, ev.awayTeamId, evLineups.away, evLineups.awayFormation]].forEach(function (side) { %>
+          <div class="border border-line bg-ink-900">
+            <div class="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+              <span class="flex min-w-0 items-center gap-2">
+                <%- include("partials/logo", { id: side[2], name: side[1], kind: 'team', size: 'sm' }) %>
+                <span class="truncate font-display text-[14px] font-bold text-mist-50"><%= side[1] %></span>
+              </span>
+              <% if (side[4]) { %><span class="ko-tabular rounded-pill border border-line bg-ink-850 px-2 py-0.5 text-[11px] text-acid-300"><%= side[4] %></span><% } %>
+            </div>
+            <% const players = side[3] || []; const starters = players.filter(function (p) { return p.isStarter; }); const bench = players.filter(function (p) { return !p.isStarter; }); %>
+            <% if (players.length === 0) { %>
+              <p class="px-3 py-6 text-center text-[12px] text-mist-500">Aucune composition publiée.</p>
+            <% } else { %>
+              <ul class="grid grid-cols-2 gap-x-3 px-3 py-2">
+                <% starters.forEach(function (p) { %>
+                  <li class="flex min-h-[34px] items-center gap-2 border-b border-line/60 py-1">
+                    <%- include("partials/logo", { id: p.id, name: p.name || '', kind: 'player', size: 'xs', round: true }) %>
+                    <span class="ko-tabular w-4 shrink-0 text-right text-[11px] text-mist-500"><%= p.jerseyNumber === null || p.jerseyNumber === undefined ? '' : p.jerseyNumber %></span>
+                    <span class="truncate text-[12px] <%= p.isCaptain ? 'font-semibold text-mist-50' : 'text-mist-200' %>"><%= p.name %><%= p.isCaptain ? ' (C)' : '' %></span>
+                  </li>
+                <% }); %>
+              </ul>
+              <% if (bench.length) { %>
+                <p class="border-t border-line px-3 py-2 text-[10px] tracking-wide text-mist-500 uppercase">Banc</p>
+                <ul class="grid grid-cols-2 gap-x-3 px-3 pb-3">
+                  <% bench.forEach(function (p) { %>
+                    <li class="flex min-h-[30px] items-center gap-2 py-0.5">
+                      <%- include("partials/logo", { id: p.id, name: p.name || '', kind: 'player', size: 'xs', round: true }) %>
+                      <span class="ko-tabular w-4 shrink-0 text-right text-[11px] text-mist-600"><%= p.jerseyNumber === null || p.jerseyNumber === undefined ? '' : p.jerseyNumber %></span>
+                      <span class="truncate text-[11px] text-mist-400"><%= p.name %><%= p.subIn ? ' (' + p.subIn + "')" : '' %></span>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } %>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+
+      <% if (evLineups.unavailable && evLineups.unavailable.length) { %>
+        <div class="mt-6">
+          <%- include("partials/section-head", {
+            title: 'Absents',
+            meta: '<span class="ko-tabular text-[11px] text-mist-500">' + evLineups.unavailable.length + '</span>'
+          }) %>
+          <ul class="flex flex-wrap gap-2">
+            <% evLineups.unavailable.forEach(function (p) { %>
+              <li class="inline-flex items-center gap-1.5 rounded-pill border border-blood-500/35 bg-blood-500/10 py-1 pl-1 pr-3 text-[11px] text-blood-200">
+                <%- include("partials/logo", { id: p.id, name: p.name || '', kind: 'player', size: 'xs', round: true }) %>
+                <%= p.name %><% if (p.injuryType) { %> · <%= p.injuryType %><% } %>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+    <% } %>
+  </section>
+
+  <!-- ---------- CHRONOLOGIE ---------- -->
+  <section role="tabpanel" id="panel-timeline" data-tab-panel="timeline" aria-labelledby="tab-timeline" class="pt-5" hidden>
+    <% if (evIncidents.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Aucune action notable', message: 'Buts, cartons et remplacements apparaîtront ici au fil du match.', icon: 'calendar' }) %>
+    <% } else { %>
+      <ol class="border border-line bg-ink-900">
+        <% evIncidents.forEach(function (inc) { %>
+          <%
+            const type = (inc.type || '').toLowerCase();
+            let marker = '•';
+            let markerCls = 'bg-ink-600 text-mist-300';
+            if (type.indexOf('goal') !== -1) { marker = '●'; markerCls = 'bg-acid-400 text-ink-950'; }
+            else if (type.indexOf('red') !== -1 || (inc.cardType || '').toLowerCase() === 'red') { marker = '■'; markerCls = 'bg-blood-500 text-white'; }
+            else if (type.indexOf('yellow') !== -1 || (inc.cardType || '').toLowerCase() === 'yellow') { marker = '■'; markerCls = 'bg-amber-400 text-ink-950'; }
+            else if (type.indexOf('subst') !== -1) { marker = '⇄'; markerCls = 'bg-ink-700 text-mist-200'; }
+            const isSub = type.indexOf('subst') !== -1;
+            const headline = isSub
+              ? (inc.playerIn || 'Remplacement') + '  ←  ' + (inc.playerOut || '—')
+              : (inc.player || '—');
+          %>
+          <li class="flex items-start gap-3 border-b border-line/70 px-3 py-2.5 last:border-b-0">
+            <span class="ko-tabular mt-0.5 w-9 shrink-0 text-right font-display text-[14px] font-bold text-mist-400"><%= inc.minute === null || inc.minute === undefined ? '—' : inc.minute + "'" %></span>
+            <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-[11px] font-bold <%= markerCls %>"><%= marker %></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-[13px] text-mist-100">
+                <%= headline %>
+                <% if (!isSub && inc.assist) { %><span class="text-mist-500">assisté par <%= inc.assist %></span><% } %>
+              </span>
+              <span class="block text-[11px] text-mist-500">
+                <%= inc.isHome ? ev.homeTeam : ev.awayTeam %><% if (inc.reason && !isSub) { %> · <%= inc.reason %><% } %>
+              </span>
+            </span>
+          </li>
+        <% }); %>
+      </ol>
+    <% } %>
+  </section>
+
+  <!-- ---------- COMMENTAIRE ---------- -->
+  <section role="tabpanel" id="panel-commentary" data-tab-panel="commentary" aria-labelledby="tab-commentary" class="pt-5" hidden>
+    <% if (evCommentary.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Pas encore de commentaire', message: 'Le compte rendu minute par minute arrive dès le coup d’envoi.', icon: 'radio' }) %>
+    <% } else { %>
+      <ol class="max-h-[560px] space-y-0 overflow-y-auto border border-line bg-ink-900">
+        <% evCommentary.forEach(function (c) { %>
+          <li class="flex gap-3 border-b border-line/60 px-3 py-2.5 last:border-b-0 <%= c.important ? 'bg-ink-850' : '' %>">
+            <span class="ko-tabular mt-0.5 w-9 shrink-0 text-right font-display text-[13px] font-bold <%= c.important ? 'text-acid-300' : 'text-mist-500' %>"><%= c.minute %><%= c.addedTime ? '+' + c.addedTime : '' %>'</span>
+            <span class="min-w-0 flex-1">
+              <% if (c.player) { %>
+                <span class="block text-[12px] font-semibold text-mist-100"><%= c.player %><% if (c.relatedPlayer) { %> <span class="font-normal text-mist-500">(<%= c.relatedPlayer %>)</span><% } %></span>
+              <% } %>
+              <span class="block text-[12px] leading-relaxed text-mist-300"><%= c.text %></span>
+              <span class="mt-0.5 block text-[10px] text-mist-600"><%= c.team || '' %><%= c.score ? ' · ' + c.score : '' %></span>
+            </span>
+          </li>
+        <% }); %>
+      </ol>
+    <% } %>
+  </section>
+
+  <!-- ---------- CONFRONTATION ---------- -->
+  <section role="tabpanel" id="panel-h2h" data-tab-panel="h2h" aria-labelledby="tab-h2h" class="pt-5" hidden>
+    <% if (!evH2h) { %>
+      <%- include("partials/empty-state", { title: 'Historique indisponible', message: 'Les confrontations directes ne sont pas encore référencées.', icon: 'chart' }) %>
+    <% } else { %>
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+        <div class="border border-line bg-ink-900 p-4">
+          <div class="mb-3 flex items-center justify-center gap-2">
+            <%- include("partials/logo", { id: ev.homeTeamId, name: ev.homeTeam || '', kind: 'team', size: 'xs' }) %>
+            <span class="text-[11px] tracking-wide text-mist-500 uppercase">vs</span>
+            <%- include("partials/logo", { id: ev.awayTeamId, name: ev.awayTeam || '', kind: 'team', size: 'xs' }) %>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-[10px] border border-line bg-ink-850 px-2 py-3">
+              <p class="ko-tabular font-display text-[24px] font-bold text-acid-300"><%= evH2h.homeWins %></p>
+              <p class="mt-0.5 text-[10px] tracking-wide text-mist-500 uppercase"><%= ev.homeTeam %></p>
+            </div>
+            <div class="rounded-[10px] border border-line bg-ink-850 px-2 py-3">
+              <p class="ko-tabular font-display text-[24px] font-bold text-mist-100"><%= evH2h.draws %></p>
+              <p class="mt-0.5 text-[10px] tracking-wide text-mist-500 uppercase">Nuls</p>
+            </div>
+            <div class="rounded-[10px] border border-line bg-ink-850 px-2 py-3">
+              <p class="ko-tabular font-display text-[24px] font-bold text-blood-300"><%= evH2h.awayWins %></p>
+              <p class="mt-0.5 text-[10px] tracking-wide text-mist-500 uppercase"><%= ev.awayTeam %></p>
+            </div>
+          </div>
+          <dl class="mt-4 space-y-2 text-[12px]">
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Rencontres jouées</dt><dd class="ko-tabular text-mist-100"><%= evH2h.totalMatches %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Buts cumulés</dt><dd class="ko-tabular text-mist-100"><%= evH2h.homeGoals %> – <%= evH2h.awayGoals %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Buts totaux (moy.)</dt><dd class="ko-tabular text-mist-100"><%= evH2h.avgTotalGoals === null || evH2h.avgTotalGoals === undefined ? '—' : Number(evH2h.avgTotalGoals).toFixed(1) %></dd>
+            </div>
+            <div class="flex items-center justify-between">
+              <dt class="text-mist-400">Taux de victoire</dt>
+              <dd class="ko-tabular text-mist-100"><%= fmt.percent(evH2h.homeWinRate) %> / <%= fmt.percent(evH2h.awayWinRate) %></dd>
+            </div>
+          </dl>
+        </div>
+
+        <div>
+          <%- include("partials/section-head", {
+            title: 'Dernières confrontations',
+            meta: evH2h.recentMatches && evH2h.recentMatches.length ? '<span class="ko-tabular text-[11px] text-mist-500">' + evH2h.recentMatches.length + '</span>' : ''
+          }) %>
+          <% if (!evH2h.recentMatches || evH2h.recentMatches.length === 0) { %>
+            <%- include("partials/empty-state", { title: 'Aucun duel récent', message: 'Ces deux équipes ne se sont encore pas rencontrées dans notre base.', icon: 'calendar' }) %>
+          <% } else { %>
+            <ul class="border border-line bg-ink-900">
+              <% evH2h.recentMatches.forEach(function (m) { %>
+                <li class="flex items-center gap-3 border-b border-line/70 px-3 py-2.5 last:border-b-0">
+                  <span class="ko-tabular hidden w-24 shrink-0 text-[11px] text-mist-500 sm:block"><%= fmt.date(m.date) %></span>
+                  <span class="min-w-0 flex-1 truncate text-right text-[12px] text-mist-200"><%= m.home %></span>
+                  <span class="ko-tabular shrink-0 rounded-[6px] border border-line bg-ink-850 px-2 py-0.5 font-display text-[13px] font-bold text-mist-50"><%= m.score %></span>
+                  <span class="min-w-0 flex-1 truncate text-[12px] text-mist-200"><%= m.away %></span>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </section>
+
+  <!-- ---------- COTES ---------- -->
+  <section role="tabpanel" id="panel-odds" data-tab-panel="odds" aria-labelledby="tab-odds" class="pt-5" hidden>
+    <% if (!evOdds || !evOdds.markets || evOdds.markets.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Cotes indisponibles', message: 'Aucun marché de cotes n’est publié pour cette rencontre.', icon: 'chart' }) %>
+    <% } else { %>
+      <div class="flex flex-col gap-4">
+        <% evOdds.markets.forEach(function (market) { %>
+          <div class="border border-line bg-ink-900">
+            <div class="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+              <h3 class="font-display text-[14px] font-bold tracking-tight text-mist-50"><%= market.label %><% if (market.line) { %> <span class="ko-tabular text-mist-400">· <%= market.line %></span><% } %></h3>
+              <span class="text-[10px] tracking-wide text-mist-500 uppercase"><%= market.market %></span>
+            </div>
+            <ul>
+              <% (market.outcomes || []).forEach(function (o) { %>
+                <li class="flex items-center gap-3 border-b border-line/60 px-3 py-2.5 last:border-b-0">
+                  <span class="w-24 shrink-0 truncate text-[12px] font-medium text-mist-100"><%= o.label %></span>
+                  <span class="ko-bar min-w-0 flex-1" aria-hidden="true">
+                    <span class="block h-full bg-acid-500" style="width:<%= Math.min(100, Math.round((o.implied || 0) * 100)) %>%"></span>
+                  </span>
+                  <span class="ko-tabular w-16 shrink-0 text-right text-[11px] text-mist-400"><%= fmt.percent(o.implied) %></span>
+                  <span class="ko-tabular w-12 shrink-0 text-right font-display text-[16px] font-bold text-mist-50"><%= o.decimal === null || o.decimal === undefined ? '—' : Number(o.decimal).toFixed(2) %></span>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% }); %>
+        <p class="text-[10px] text-mist-500">
+          Cotes consensus (moyenne des bookmakers) · <%= evOdds.bookmakersCount || 0 %> bookmaker(s)
+          <% if (evOdds.lastUpdateAt) { %> · dernière mise à jour <%= fmt.ago(evOdds.lastUpdateAt) %><% } %>
+        </p>
+      </div>
+    <% } %>
+  </section>
+
+  <!-- ---------- PRÉDICTION ---------- -->
+  <section role="tabpanel" id="panel-prediction" data-tab-panel="prediction" aria-labelledby="tab-prediction" class="pt-5" hidden>
+    <% if (!evPrediction) { %>
+      <%- include("partials/empty-state", { title: 'Pas de prédiction', message: 'Le modèle n’a pas encore publié de prévision pour cette rencontre.', icon: 'sparkles' }) %>
+    <% } else { %>
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
+        <div class="border border-line bg-ink-900 p-4">
+          <p class="ko-eyebrow mb-4 text-center text-[11px] text-mist-400">Issue attendue (1X2)</p>
+          <div class="flex h-3 overflow-hidden rounded-full bg-ink-700" role="img" aria-label="Répartition des probabilités">
+            <span class="bg-acid-500" style="width:<%= Math.round((evPrediction.homeProb || 0) * 100) %>%"></span>
+            <span class="bg-mist-500" style="width:<%= Math.round((evPrediction.drawProb || 0) * 100) %>%"></span>
+            <span class="bg-blood-500/80" style="width:<%= Math.round((evPrediction.awayProb || 0) * 100) %>%"></span>
+          </div>
+          <ul class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <% [['Victoire ' + (ev.homeTeam || 'dom.'), evPrediction.homeProb, 'text-acid-300'],
+               ['Nul', evPrediction.drawProb, 'text-mist-100'],
+               ['Victoire ' + (ev.awayTeam || 'ext.'), evPrediction.awayProb, 'text-blood-300']].forEach(function (p) { %>
+              <li class="rounded-[10px] border border-line bg-ink-850 px-2 py-3">
+                <p class="ko-tabular font-display text-[22px] font-bold <%= p[2] %>"><%= fmt.percent(p[1]) %></p>
+                <p class="mt-1 truncate text-[10px] tracking-wide text-mist-500 uppercase"><%= p[0] %></p>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+
+        <div class="border border-line bg-ink-900 p-4">
+          <p class="ko-eyebrow mb-4 text-center text-[11px] text-mist-400">Score attendu</p>
+          <div class="flex flex-col items-center gap-3">
+            <div class="flex items-center gap-3">
+              <%- include("partials/logo", { id: ev.homeTeamId, name: ev.homeTeam || '', kind: 'team', size: 'sm' }) %>
+              <span class="text-[11px] text-mist-400">contre</span>
+              <%- include("partials/logo", { id: ev.awayTeamId, name: ev.awayTeam || '', kind: 'team', size: 'sm' }) %>
+            </div>
+            <p class="ko-tabular font-display text-[38px] leading-none font-bold text-mist-50"><%= evPrediction.score || '—' %></p>
+          </div>
+          <dl class="mt-4 space-y-2 text-[12px]">
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Buts attendus <%= ev.homeTeam || 'dom.' %></dt>
+              <dd class="ko-tabular text-mist-100"><%= evPrediction.expectedHomeGoals === null || evPrediction.expectedHomeGoals === undefined ? '—' : Number(evPrediction.expectedHomeGoals).toFixed(2) %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Buts attendus <%= ev.awayTeam || 'ext.' %></dt>
+              <dd class="ko-tabular text-mist-100"><%= evPrediction.expectedAwayGoals === null || evPrediction.expectedAwayGoals === undefined ? '—' : Number(evPrediction.expectedAwayGoals).toFixed(2) %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Plus de 2,5 buts</dt>
+              <dd class="ko-tabular text-mist-100"><%= fmt.percent(evPrediction.over25) %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Les deux équipes marquent</dt>
+              <dd class="ko-tabular text-mist-100"><%= fmt.percent(evPrediction.btts) %></dd>
+            </div>
+            <div class="flex items-center justify-between">
+              <dt class="text-mist-400">Confiance</dt>
+              <dd class="ko-tabular font-semibold text-acid-300"><%= fmt.percent(evPrediction.topProbability) %></dd>
+            </div>
+          </dl>
+          <% if (evPrediction.model) { %>
+            <p class="mt-4 border-t border-line pt-3 text-[10px] text-mist-500">Modèle : <%= evPrediction.model %><% if (evPrediction.updatedAt) { %> · <%= fmt.ago(evPrediction.updatedAt) %><% } %></p>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </section>
+
+  <!-- ---------- POSITIONS ---------- -->
+  <section role="tabpanel" id="panel-standings" data-tab-panel="standings" aria-labelledby="tab-standings" class="pt-5" hidden>
+    <% if (!standings || standingRows.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Classement indisponible', message: 'Aucun classement n’est associé à cette compétition.', icon: 'trophy' }) %>
+    <% } else { %>
+      <div class="mb-4 grid gap-3 sm:grid-cols-2">
+        <% [[homeStanding, ev.homeTeam, homeTeamId], [awayStanding, ev.awayTeam, awayTeamId]].forEach(function (row) { %>
+          <% const s = row[0]; %>
+          <div class="border border-line bg-ink-900 p-3">
+            <p class="flex items-center gap-2 text-[11px] text-mist-400">
+              <%- include("partials/logo", { id: row[2], name: row[1], kind: 'team', size: 'xs' }) %>
+              <span class="truncate"><%= row[1] %></span>
+            </p>
+            <% if (s) { %>
+              <p class="mt-2 font-display text-[26px] leading-none font-bold text-acid-300"><%= s.position %><span class="ml-1 text-[13px] text-mist-500">e</span></p>
+              <p class="ko-tabular mt-1 text-[11px] text-mist-400"><%= s.pts %> pts · <%= s.played %> j · <%= s.gf %>–<%= s.ga %></p>
+            <% } else { %>
+              <p class="mt-2 text-[12px] text-mist-500">Position non référencée.</p>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+      <%- include("partials/standing-table", { standings: standingRows, grouped: false, groups: {}, highlightTeamId: null }) %>
+    <% } %>
+  </section>
+</div>

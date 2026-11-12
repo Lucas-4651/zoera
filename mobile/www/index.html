@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zoera</title>
+  <meta name="theme-color" content="#0a0d12">
+  <meta name="color-scheme" content="dark">
+  <style>
+    /* Page locale embarquée dans l'APK : elle s'affiche quand le serveur
+       Zoera est injoignable (pas de réseau, site en maintenance).
+       CSS inline volontairement : aucune dépendance réseau. */
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{
+      background:#0a0d12;color:#f5f8fb;
+      font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      display:flex;align-items:center;justify-content:center;
+      padding:24px;text-align:center;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .wrap{max-width:340px;display:flex;flex-direction:column;align-items:center;gap:18px}
+    .mark{
+      width:56px;height:56px;border-radius:14px;background:#cdf542;color:#06080b;
+      display:grid;place-items:center;
+    }
+    .mark svg{width:34px;height:34px;display:block}
+    h1{
+      font-size:24px;line-height:1.1;margin:0;letter-spacing:-0.01em;font-weight:800;
+    }
+    p{font-size:13px;line-height:1.6;color:#8e9aab;margin:0}
+    button{
+      margin-top:6px;min-height:48px;width:100%;border-radius:10px;cursor:pointer;
+      border:1px solid rgba(176,221,36,.4);background:rgba(176,221,36,.12);
+      color:#d4ff55;font-size:14px;font-weight:600;
+    }
+    button:active{background:rgba(176,221,36,.22)}
+    .foot{font-size:11px;color:#55606f}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <g transform="translate(1.2 1.2) scale(0.9)">
+          <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+          <circle cx="20.4" cy="3.6" r="2.7"/>
+        </g>
+      </svg>
+    </div>
+    <h1>Serveur injoignable</h1>
+    <p>
+      Zoera n'arrive pas à joindre le serveur. Vérifie ta connexion internet,
+      puis réessaie.
+    </p>
+    <button type="button" onclick="location.reload()">Réessayer</button>
+    <p class="foot">Les scores en direct nécessitent une connexion.</p>
+  </div>
+</body>
+</html>

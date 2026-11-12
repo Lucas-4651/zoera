@@ -1,0 +1,79 @@
+<%
+  const liveList = live || [];
+  const leagueList = leagues || [];
+  const updated = updatedAt ? fmt.time(updatedAt) : '';
+
+  // Regroupement par compétition
+  const groups = [];
+  const index = {};
+  liveList.forEach(function (ev) {
+    const key = ev.leagueId;
+    if (!index[key]) {
+      index[key] = { id: key, name: ev.leagueName || 'Autres compétitions', events: [] };
+      groups.push(index[key]);
+    }
+    index[key].events.push(ev);
+  });
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Direct',
+  title: 'Matchs en direct',
+  subtitle: 'Les rencontres en cours, mises à jour automatiquement toutes les 15 secondes.'
+}) %>
+
+<!-- Bandeau de contrôle : centré, il joue le rôle d'accroche d'état -->
+<div class="relative mb-6 overflow-hidden border border-line bg-ink-850 px-3 py-4 text-center">
+  <span aria-hidden="true" class="pointer-events-none absolute inset-x-0 -top-24 h-40"
+        style="background-image:radial-gradient(50% 100% at 50% 100%,rgba(205,245,66,.10),transparent 70%);"></span>
+  <div class="relative flex flex-col items-center gap-2">
+    <span class="flex items-center gap-2.5">
+      <span class="ko-live-dot" aria-hidden="true"></span>
+      <span class="font-display text-[22px] leading-none font-bold tracking-tight text-mist-50 md:text-[26px]">
+        <span class="ko-tabular text-acid-300" data-live-count><%= liveList.length %></span>
+        <%= liveList.length > 1 ? 'matchs en cours' : 'match en cours' %>
+      </span>
+    </span>
+    <span class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-mist-500">
+      <span data-live-updated class="ko-tabular">Dernière mise à jour : <%= updated || '—' %></span>
+      <span class="hidden items-center gap-1.5 sm:inline-flex">
+        <span class="h-1.5 w-1.5 rounded-full bg-acid-500"></span>Actualisation automatique
+      </span>
+    </span>
+  </div>
+</div>
+
+<% if (leagueList.length > 1) { %>
+  <div class="ko-rail mb-6 -mx-3 px-3 md:mx-0 md:px-0">
+    <button type="button" data-live-league-filter="" class="ko-focus min-h-[40px] shrink-0 rounded-pill border border-acid-500/50 bg-acid-500/12 px-4 text-[12px] font-semibold text-acid-300 transition-colors duration-200">Toutes</button>
+    <% leagueList.forEach(function (lg) { %>
+      <button type="button" data-live-league-filter="<%= lg.id %>" class="ko-focus min-h-[40px] shrink-0 rounded-pill border border-line bg-ink-850 px-4 text-[12px] font-medium text-mist-300 transition-colors duration-200 hover:border-line-strong hover:text-mist-50"><%= lg.name %></button>
+    <% }); %>
+  </div>
+<% } %>
+
+<% if (groups.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucun match en direct', message: 'Aucune rencontre n’est en cours pour le moment. Revenez plus tard ou consultez le calendrier.', icon: 'radio' }) %>
+<% } else { %>
+  <div class="flex flex-col gap-8">
+    <% groups.forEach(function (group) { %>
+      <section data-live-group="<%= group.id %>">
+        <!-- Bandeau de compétition : logo + nom, centré -->
+        <div class="mb-3 flex flex-col items-center gap-2">
+          <div class="flex items-center gap-2.5">
+            <%- include("partials/logo", { id: group.id, name: group.name, kind: 'league', size: 'sm' }) %>
+            <h2 class="font-display text-[17px] font-bold tracking-tight text-mist-50 md:text-[20px]"><%= group.name %></h2>
+          </div>
+          <span class="ko-tabular rounded-pill border border-line bg-ink-850 px-2.5 py-0.5 text-[10px] text-mist-400">
+            <%= group.events.length %> <%= group.events.length > 1 ? 'matchs' : 'match' %>
+          </span>
+        </div>
+        <ul class="border border-line bg-ink-900">
+          <% group.events.forEach(function (ev) { %>
+            <%- include("partials/match-row", { event: ev }) %>
+          <% }); %>
+        </ul>
+      </section>
+    <% }); %>
+  </div>
+<% } %>

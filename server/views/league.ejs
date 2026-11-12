@@ -1,0 +1,141 @@
+<%
+  const lg = league;
+  const standingsData = standings || null;
+  const flatRows = standingsData && standingsData.flat ? standingsData.flat : [];
+  const scorers = topScorers || [];
+  const xi = bestXI || null;
+  const compEvents = events || [];
+  const seasonList = seasons || [];
+
+  const grouped = standingsData ? !!standingsData.grouped : false;
+  const groups = standingsData && standingsData.groups ? standingsData.groups : {};
+
+  /* Échappement des fragments HTML injectés dans `meta` (section-head). */
+  const esc = function (v) {
+    return String(v === null || v === undefined ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+%>
+
+<!-- Écusson de la compétition : l'image remplace le texte là où c'est possible -->
+<div class="mb-4 flex justify-center">
+  <%- include("partials/img", { id: lg.id, name: lg.name, kind: 'league', size: 'xl' }) %>
+</div>
+
+<%- include("partials/page-head", {
+  eyebrow: (lg.country || '') + (lg.isWomen ? ' · Compétition féminine' : ''),
+  title: lg.name,
+  subtitle: season ? season.name : 'Saison en cours'
+}) %>
+
+<!-- Saison + infos -->
+<div class="mb-6 flex flex-wrap items-center gap-2 border border-line bg-ink-850 px-3 py-2.5 text-[11px] text-mist-400">
+  <% if (seasonList.length > 1) { %>
+    <span class="text-mist-500">Saison</span>
+    <% seasonList.slice(0, 5).forEach(function (s) { %>
+      <a href="/leagues/<%= lg.id %>?season_id=<%= s.id %>"
+         class="rounded-pill border px-2.5 py-1 font-medium transition-colors duration-200 <%= season && s.id === season.id ? 'border-acid-500/50 bg-acid-500/12 text-acid-300' : 'border-line bg-ink-800 text-mist-400 hover:text-mist-100' %>">
+        <%= s.name %><% if (s.isCurrent) { %> · <span class="text-acid-400">en cours</span><% } %>
+      </a>
+    <% }); %>
+  <% } else if (season) { %>
+    <span class="text-mist-500">Saison</span>
+    <span class="rounded-pill border border-line bg-ink-800 px-2.5 py-1 font-medium text-mist-200"><%= season.name %></span>
+  <% } %>
+  <% if (lg.isActive === false) { %>
+    <span class="ml-auto rounded-pill border border-line bg-ink-800 px-2.5 py-1 text-mist-500">Compétition inactive</span>
+  <% } %>
+</div>
+
+<!-- Classement -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'Classement',
+    meta: '<span class="ko-tabular">' + esc(flatRows.length) + ' équipes</span>'
+  }) %>
+  <div class="md:border md:border-line md:bg-ink-900 md:px-3 md:py-2">
+    <%- include("partials/standing-table", { standings: flatRows, grouped: grouped, groups: groups, highlightTeamId: null }) %>
+  </div>
+</section>
+
+<!-- Buteurs + meilleur XI -->
+<section class="mb-8 grid gap-6 lg:grid-cols-2">
+  <div>
+    <%- include("partials/section-head", {
+      title: 'Meilleurs buteurs',
+      meta: scorers.length > 0 ? '<span class="ko-tabular">' + esc(Math.min(scorers.length, 15)) + ' joueurs</span>' : ''
+    }) %>
+    <% if (scorers.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Classement des buts indisponible', message: 'Les statistiques de buts ne sont pas encore disponibles pour cette compétition.', icon: 'trophy' }) %>
+    <% } else { %>
+      <ol class="border border-line bg-ink-900">
+        <% scorers.slice(0, 15).forEach(function (p) { %>
+          <% const sPlayerId = (p.playerId === null || p.playerId === undefined) ? null : p.playerId; %>
+          <li class="flex items-center gap-3 border-b border-line/80 px-3 py-2.5 last:border-b-0">
+            <span class="ko-tabular w-5 shrink-0 text-right font-display text-[15px] font-bold <%= p.rank <= 3 ? 'text-acid-400' : 'text-mist-500' %>"><%= p.rank %></span>
+            <%- include("partials/img", { id: sPlayerId, name: p.playerName, kind: 'player', size: 'sm', round: true, fit: 'cover' }) %>
+            <% if (sPlayerId) { %>
+              <a href="/players/<%= sPlayerId %>" class="min-w-0 flex-1">
+                <span class="block truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= p.playerName %></span>
+                <span class="block truncate text-[11px] text-mist-500"><%= p.teamName %> · <%= p.position %> · <%= p.matches %> matchs</span>
+              </a>
+            <% } else { %>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-[13px] font-medium text-mist-100"><%= p.playerName %></span>
+                <span class="block truncate text-[11px] text-mist-500"><%= p.teamName %> · <%= p.position %> · <%= p.matches %> matchs</span>
+              </span>
+            <% } %>
+            <span class="ko-tabular shrink-0 font-display text-[18px] font-bold text-mist-50"><%= p.value %></span>
+          </li>
+        <% }); %>
+      </ol>
+    <% } %>
+  </div>
+
+  <div>
+    <%- include("partials/section-head", {
+      title: 'Meilleur XI',
+      meta: (xi && xi.formation)
+        ? '<span class="ko-tabular rounded-pill border border-acid-500/35 bg-acid-500/10 px-2 py-0.5 text-[11px] text-acid-300">' + esc(xi.formation) + '</span>'
+        : ''
+    }) %>
+    <% if (!xi || !xi.lineup || xi.lineup.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Meilleur XI indisponible', message: 'Le meilleur onze de la saison sera disponible après quelques journées de championnat.', icon: 'trophy' }) %>
+    <% } else { %>
+      <ul class="border border-line bg-ink-900">
+        <% xi.lineup.forEach(function (slot) { %>
+          <li class="flex items-center gap-3 border-b border-line/80 px-3 py-2.5 last:border-b-0">
+            <span class="ko-eyebrow w-16 shrink-0 text-[10px] text-mist-500"><%= slot.position %></span>
+            <% if (slot.player) { %>
+              <a href="/players/<%= slot.player.id %>" class="flex min-w-0 flex-1 items-center gap-2.5">
+                <%- include("partials/img", { id: slot.player.id, name: slot.player.name, kind: 'player', size: 'xs', round: true, fit: 'cover' }) %>
+                <span class="min-w-0 truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= slot.player.name %></span>
+              </a>
+              <span class="ko-tabular shrink-0 rounded-[6px] border border-line bg-ink-850 px-2 py-0.5 text-[12px] font-bold <%= (slot.rating || 0) >= 8 ? 'text-acid-300' : 'text-mist-200' %>"><%= slot.rating === null || slot.rating === undefined ? '—' : slot.rating %></span>
+            <% } else { %>
+              <span class="min-w-0 flex-1 truncate text-[13px] text-mist-500">—</span>
+            <% } %>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</section>
+
+<!-- Calendrier de la compétition -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'Calendrier',
+    meta: compEvents.length > 0 ? '<span class="ko-tabular">' + esc(compEvents.length) + ' rencontres</span>' : ''
+  }) %>
+  <% if (compEvents.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucune rencontre', message: 'Le calendrier de cette compétition n’est pas encore disponible.', icon: 'calendar' }) %>
+  <% } else { %>
+    <ul class="border border-line bg-ink-900">
+      <% compEvents.forEach(function (ev) { %>
+        <%- include("partials/match-row", { event: ev }) %>
+      <% }); %>
+    </ul>
+  <% } %>
+</section>

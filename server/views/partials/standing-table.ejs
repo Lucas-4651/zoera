@@ -1,0 +1,195 @@
+<%
+  /* Tableau de classement. Attend : standings (plateau), grouped, groups, highlightTeamId
+
+     Deux rendus issus des MÊMES variables (aucun appel supplémentaire) :
+       • mobile  (< md) : une carte empilée par équipe (rang / nom / stats / forme)
+       • desktop (>= md) : le tableau dense d'origine, strictement inchangé.
+
+     Les deux rendus cohabitent dans le DOM : la bascule se fait en CSS. */
+  const rows = (typeof standings !== 'undefined' && standings) ? standings : [];
+  const isGrouped = !!(typeof grouped !== 'undefined' && grouped);
+  const groupMap = (typeof groups !== 'undefined' && groups) ? groups : {};
+  const highlight = (typeof highlightTeamId !== 'undefined' && highlightTeamId !== null) ? highlightTeamId : null;
+
+  /* Zone de classement → couleur du repère (liseré à gauche).
+     Le repère est une information de classement : il est conservé sur mobile. */
+  const zoneColor = (zone) => {
+    const z = (zone || '').toLowerCase();
+    if (!z) return '';
+    if (z.indexOf('releg') !== -1 || z.indexOf('down') !== -1) return 'border-l-blood-500';
+    if (z.indexOf('champ') !== -1 || z.indexOf('ucl') !== -1 || z.indexOf('qualif') !== -1 || z.indexOf('europa') !== -1 || z.indexOf('conference') !== -1) return 'border-l-acid-400';
+    if (z.indexOf('playoff') !== -1 || z.indexOf('barrage') !== -1) return 'border-l-amber-400';
+    if (z.indexOf('promo') !== -1 || z.indexOf('up') !== -1) return 'border-l-acid-600';
+    return '';
+  };
+  /* Desktop : identique à l'existant (1 px transparent hors zone). */
+  const zoneClass = (zone) => {
+    const c = zoneColor(zone);
+    return c ? ('border-l-2 ' + c) : 'border-l border-transparent';
+  };
+  /* Mobile : 2 px systématiques — la gouttière existe même hors zone, pour que
+     le contenu des cartes reste aligné d'une équipe à l'autre. */
+  const zoneBar = (zone) => {
+    const c = zoneColor(zone);
+    return c ? ('border-l-2 ' + c) : 'border-l-2 border-l-transparent';
+  };
+
+  const formCell = (form) => {
+    const f = (form || '').toUpperCase().replace(/[^WDL]/g, '');
+    if (!f) return '<span class="text-mist-500">—</span>';
+    return f.split('').map(function (c) {
+      const cls = c === 'W' ? 'bg-acid-500/18 text-acid-300' : (c === 'D' ? 'bg-ink-700 text-mist-300' : 'bg-blood-500/18 text-blood-300');
+      const lbl = c === 'W' ? 'victoire' : (c === 'D' ? 'nul' : 'défaite');
+      return '<span class="inline-grid h-[18px] w-[18px] place-items-center rounded-[4px] text-[10px] font-bold ' + cls + '" title="' + lbl + '" aria-label="' + lbl + '">' + c + '</span>';
+    }).join('');
+  };
+  const txt = (v) => (v === null || v === undefined) ? '' : String(v);
+
+  /* Statistiques de la carte mobile : libellé visible + valeur tabulaire.
+     L'ordre suit celui du tableau dense (J G N P +/- PTS xG). */
+  const mobileStats = (s) => ([
+    { label: 'J',   value: txt(s.played), cls: 'text-mist-200' },
+    { label: 'G',   value: txt(s.won),    cls: 'text-mist-200' },
+    { label: 'N',   value: txt(s.drawn),  cls: 'text-mist-200' },
+    { label: 'P',   value: txt(s.lost),   cls: 'text-mist-200' },
+    { label: '+/-', value: (s.gd > 0 ? '+' : '') + txt(s.gd),
+      cls: s.gd > 0 ? 'text-acid-300' : (s.gd < 0 ? 'text-blood-300' : 'text-mist-200') },
+    { label: 'PTS', value: txt(s.pts),    cls: 'font-bold text-mist-50' },
+    { label: 'xG',  value: (s.xgf === null || s.xgf === undefined) ? '—' : Number(s.xgf).toFixed(1),
+      cls: 'text-mist-300' }
+  ]);
+  const statCell = (st) => (
+    '<div class="px-1 py-1.5 text-center">'
+    + '<dt class="text-[9px] font-semibold uppercase tracking-[0.08em] text-mist-300">' + st.label + '</dt>'
+    + '<dd class="ko-tabular mt-1 text-[13px] leading-none ' + st.cls + '">' + st.value + '</dd>'
+    + '</div>'
+  );
+
+  const blocks = isGrouped
+    ? Object.keys(groupMap).map(function (k) { return { name: k, rows: groupMap[k] || [] }; })
+    : [{ name: '', rows: rows }];
+
+  /* Un groupe est un repère de lecture : son intitulé reste à gauche.
+     Même libellé que le tableau dense (desktop) — les deux rendus concordent. */
+  const groupLabel = (name) => (name ? ('Groupe ' + name) : '');
+  /* La légende des zones n'est affichée qu'une fois, sous le classement. */
+  const anyZone = blocks.some(function (b) { return b.rows.length && b.rows[0].zone; });
+%>
+<% if (rows.length === 0 && Object.keys(groupMap).length === 0) { %>
+  <div class="border border-line bg-ink-900 md:border-0 md:bg-transparent">
+    <%- include("empty-state", { title: 'Classement indisponible', message: 'Les données de classement ne sont pas encore publiées pour cette compétition.' }) %>
+  </div>
+<% } else { %>
+
+  <!-- ==================== MOBILE (< md) : carte empilée ==================== -->
+  <div class="md:hidden">
+    <div class="border border-line bg-ink-900">
+      <% blocks.forEach(function (block, bi) { %>
+        <% if (block.name) { %>
+          <p class="ko-eyebrow border-b border-line bg-ink-850 px-3 py-2 text-[11px] text-acid-400"><%= groupLabel(block.name) %></p>
+        <% } %>
+        <ul aria-label="Classement">
+          <% block.rows.forEach(function (s, i) { %>
+            <% const isLastRow = (bi === blocks.length - 1) && (i === block.rows.length - 1); %>
+            <li class="relative overflow-hidden <%= zoneBar(s.zone) %> <%= isLastRow ? '' : 'border-b border-b-line/80' %> <%= highlight !== null && s.teamId === highlight ? 'bg-acid-500/10' : '' %>">
+              <div class="px-3 py-2.5">
+
+                <!-- Ligne 1 : rang · écusson · nom complet du club (une seule ligne).
+                     Le lien est étiré sur toute la carte (cible tactile large). -->
+                <div class="flex items-center gap-2.5">
+                  <span class="ko-tabular flex w-8 shrink-0 items-center gap-1 font-display text-[15px] font-bold text-mist-300">
+                    <%= s.position %>
+                    <% if (s.live) { %><span class="ko-live-dot" title="Match en cours" aria-label="Match en cours"></span><% } %>
+                  </span>
+                  <a href="/teams/<%= s.teamId %>" class="ko-focus flex min-w-0 flex-1 items-center gap-2.5 after:absolute after:inset-0">
+                    <%- include("logo", { id: s.teamId, name: s.teamName, kind: 'team', size: 'sm' }) %>
+                    <span class="min-w-0 whitespace-nowrap text-[13px] font-medium leading-tight <%= highlight !== null && s.teamId === highlight ? 'text-acid-200' : 'text-mist-100' %>"><%= s.teamName %></span>
+                  </a>
+                </div>
+
+                <!-- Ligne 2 : statistiques essentielles, libellés visibles -->
+                <dl class="mt-2 grid grid-cols-7 divide-x divide-line/60 border-y border-y-line/70">
+                  <% mobileStats(s).forEach(function (st) { %><%- statCell(st) %><% }); %>
+                </dl>
+
+                <!-- Ligne 3 : forme (5 dernières rencontres).
+                     Les pastilles restent au-dessus du lien étiré (infobulle). -->
+                <div class="relative z-10 mt-2 flex items-center justify-between gap-2">
+                  <span class="ko-eyebrow text-[9px] text-mist-300">Forme</span>
+                  <span class="flex justify-end gap-1"><%- formCell(s.form) %></span>
+                </div>
+
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% }); %>
+      <% if (anyZone) { %>
+        <p class="flex flex-wrap gap-x-4 gap-y-1 border-t border-t-line/70 px-3 py-2 text-[10px] text-mist-300">
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-acid-400"></span>Zone de qualification</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-blood-500"></span>Relégation</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-amber-400"></span>Barrage</span>
+        </p>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ==================== DESKTOP (>= md) : tableau dense ==================== -->
+  <div class="hidden overflow-x-auto md:block">
+    <% blocks.forEach(function (block) { %>
+      <% if (block.name) { %>
+        <p class="ko-eyebrow mb-2 mt-4 text-[11px] text-acid-400 first:mt-0">Groupe <%= block.name %></p>
+      <% } %>
+      <table class="ko-table">
+        <caption class="sr-only">Classement</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="w-8">#</th>
+            <th scope="col">Équipe</th>
+            <th scope="col">J</th>
+            <th scope="col">G</th>
+            <th scope="col">N</th>
+            <th scope="col">P</th>
+            <th scope="col">+/-</th>
+            <th scope="col">Pts</th>
+            <th scope="col" class="hidden md:table-cell">xG</th>
+            <th scope="col" class="hidden sm:table-cell">Forme</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% block.rows.forEach(function (s) { %>
+            <tr class="<%= zoneClass(s.zone) %> <%= highlight !== null && s.teamId === highlight ? 'bg-acid-500/10' : '' %>">
+              <td class="ko-tabular text-mist-400">
+                <span class="inline-flex items-center gap-1">
+                  <%= s.position %>
+                  <% if (s.live) { %><span class="ko-live-dot" title="Match en cours" aria-label="Match en cours"></span><% } %>
+                </span>
+              </td>
+              <td class="max-w-[200px]">
+                <a href="/teams/<%= s.teamId %>" class="flex min-w-0 items-center gap-2 text-left text-[13px] font-medium text-mist-100 hover:text-acid-300">
+                  <%- include("logo", { id: s.teamId, name: s.teamName, kind: 'team', size: 'xs' }) %>
+                  <span class="truncate"><%= s.teamName %></span>
+                </a>
+              </td>
+              <td class="ko-tabular text-mist-300"><%= s.played %></td>
+              <td class="ko-tabular text-mist-300"><%= s.won %></td>
+              <td class="ko-tabular text-mist-300"><%= s.drawn %></td>
+              <td class="ko-tabular text-mist-300"><%= s.lost %></td>
+              <td class="ko-tabular <%= s.gd > 0 ? 'text-acid-300' : (s.gd < 0 ? 'text-blood-300' : 'text-mist-300') %>"><%= s.gd > 0 ? '+' : '' %><%= s.gd %></td>
+              <td class="ko-tabular font-bold text-mist-50"><%= s.pts %></td>
+              <td class="ko-tabular hidden text-mist-300 md:table-cell"><%= s.xgf === null || s.xgf === undefined ? '—' : Number(s.xgf).toFixed(1) %></td>
+              <td class="hidden sm:table-cell"><span class="flex justify-end gap-1"><%- formCell(s.form) %></span></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <% if (block.rows.length && block.rows[0].zone) { %>
+        <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-mist-500">
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-acid-400"></span>Zone de qualification</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-blood-500"></span>Relégation</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-3 w-[3px] rounded-full bg-amber-400"></span>Barrage</span>
+        </p>
+      <% } %>
+    <% }); %>
+  </div>
+<% } %>

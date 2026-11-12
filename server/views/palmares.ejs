@@ -1,0 +1,328 @@
+<%
+  const feat = (typeof featured !== 'undefined' && featured) ? featured : { club: null, player: null, competition: null };
+  const clubList = clubs || [];
+  const playerList = players || [];
+  const compList = competitions || [];
+  const generated = typeof generatedAt !== 'undefined' ? generatedAt : null;
+
+  const idx = (v) => (v === null || v === undefined ? '—' : Number(v).toFixed(1).replace('.', ','));
+  const positionLabels = { G: 'Gardien', D: 'Défenseur', M: 'Milieu', F: 'Attaquant' };
+  const posLabel = (p) => positionLabels[p] || (p || '—');
+  const maxClubScore = clubList.length ? Math.max(...clubList.map((c) => c.score)) : 1;
+  const maxPlayerScore = playerList.length ? Math.max(...playerList.map((p) => p.score)) : 1;
+  const maxCompScore = compList.length ? Math.max(...compList.map((c) => c.score)) : 1;
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Palmarès',
+  title: 'Les meilleurs du monde',
+  subtitle: 'Meilleur club, meilleur joueur et meilleure compétition, calculés à partir des données réelles de la saison sur ' + (leaguesAnalysed || 0) + ' compétitions.'
+}) %>
+
+<!-- ===================== PODIUM ===================== -->
+<% if (feat.club || feat.player || feat.competition) { %>
+<section class="mb-8 grid gap-3 md:grid-cols-3">
+
+  <!-- Meilleur club -->
+  <% if (feat.club) { %>
+    <a href="/teams/<%= feat.club.teamId %>" class="ko-focus group relative flex flex-col gap-4 overflow-hidden border border-acid-500/30 bg-ink-850 p-5 transition-colors duration-200 hover:border-acid-500/60 hover:bg-ink-800">
+      <span class="pointer-events-none absolute -right-2 -top-4 font-display text-[92px] leading-none font-bold text-acid-400/10" aria-hidden="true">01</span>
+      <span class="ko-eyebrow text-[10px] text-acid-400">Meilleur club</span>
+      <div class="flex items-center gap-3">
+        <%- include("partials/img", { id: feat.club.teamId, name: feat.club.teamName, kind: 'team', size: 'lg' }) %>
+        <span class="min-w-0">
+          <span class="block truncate font-display text-[19px] leading-tight font-bold text-mist-50"><%= feat.club.teamName %></span>
+          <span class="block truncate text-[11px] text-mist-400"><%= feat.club.leagueName %></span>
+        </span>
+      </div>
+      <div class="flex items-end justify-between gap-3">
+        <span class="text-[11px] text-mist-400"><%= feat.club.detail %></span>
+        <span class="ko-tabular shrink-0 font-display text-[26px] leading-none font-bold text-acid-300"><%= idx(feat.club.score) %></span>
+      </div>
+    </a>
+  <% } %>
+
+  <!-- Meilleur joueur -->
+  <% if (feat.player) { %>
+    <a href="/players/<%= feat.player.playerId %>" class="ko-focus group relative flex flex-col gap-4 overflow-hidden border border-line bg-ink-850 p-5 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+      <span class="pointer-events-none absolute -right-2 -top-4 font-display text-[92px] leading-none font-bold text-mist-100/5" aria-hidden="true">02</span>
+      <span class="ko-eyebrow text-[10px] text-mist-400">Meilleur joueur</span>
+      <div class="flex items-center gap-3">
+        <%- include("partials/img", { id: feat.player.playerId, name: feat.player.playerName, kind: 'player', size: 'lg', round: true, fit: 'cover' }) %>
+        <span class="min-w-0">
+          <span class="block truncate font-display text-[19px] leading-tight font-bold text-mist-50"><%= feat.player.playerName %></span>
+          <span class="block truncate text-[11px] text-mist-400">
+            <%= feat.player.teamName %> · <%= posLabel(feat.player.position) %>
+          </span>
+        </span>
+      </div>
+      <div class="flex items-end justify-between gap-3">
+        <span class="text-[11px] text-mist-400"><%= feat.player.detail %></span>
+        <span class="ko-tabular shrink-0 font-display text-[26px] leading-none font-bold text-mist-50"><%= idx(feat.player.score) %></span>
+      </div>
+    </a>
+  <% } %>
+
+  <!-- Meilleure compétition -->
+  <% if (feat.competition) { %>
+    <a href="/leagues/<%= feat.competition.leagueId %>" class="ko-focus group relative flex flex-col gap-4 overflow-hidden border border-line bg-ink-850 p-5 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+      <span class="pointer-events-none absolute -right-2 -top-4 font-display text-[92px] leading-none font-bold text-mist-100/5" aria-hidden="true">03</span>
+      <span class="ko-eyebrow text-[10px] text-mist-400">Meilleure compétition</span>
+      <div class="flex items-center gap-3">
+        <%- include("partials/img", { id: feat.competition.leagueId, name: feat.competition.leagueName, kind: 'league', size: 'lg' }) %>
+        <span class="min-w-0">
+          <span class="block truncate font-display text-[19px] leading-tight font-bold text-mist-50"><%= feat.competition.leagueName %></span>
+          <span class="block truncate text-[11px] text-mist-400"><%= feat.competition.country %> · <%= feat.competition.teams %> clubs</span>
+        </span>
+      </div>
+      <div class="flex items-end justify-between gap-3">
+        <span class="text-[11px] text-mist-400"><%= feat.competition.detail %></span>
+        <span class="ko-tabular shrink-0 font-display text-[26px] leading-none font-bold text-mist-50"><%= idx(feat.competition.score) %></span>
+      </div>
+    </a>
+  <% } %>
+
+</section>
+<% } else { %>
+  <%- include("partials/empty-state", { title: 'Palmarès indisponible', message: 'Les classements n’ont pas pu être lus pour le moment. Revenez dans quelques instants.', icon: 'trophy' }) %>
+<% } %>
+
+<!-- ===================== CLASSEMENT DES CLUBS ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", { title: 'Meilleurs clubs', meta: '<span class="text-[11px] text-mist-500">toutes compétitions</span>' }) %>
+
+  <% if (clubList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucun club classé', message: 'Les classements reviendront dès que la saison aura démarré.', icon: 'trophy' }) %>
+  <% } else { %>
+    <!-- Desktop : tableau dense -->
+    <div class="hidden overflow-x-auto border border-line bg-ink-900 md:block">
+      <table class="ko-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" class="text-left">Club</th>
+            <th scope="col" class="text-left">Compétition</th>
+            <th scope="col">J</th>
+            <th scope="col">PTS</th>
+            <th scope="col">+/−</th>
+            <th scope="col">xG</th>
+            <th scope="col" class="text-left">Forme</th>
+            <th scope="col">Indice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% clubList.forEach(function (club) { %>
+            <tr>
+              <td class="ko-tabular font-display text-[13px] font-bold <%= club.rank <= 3 ? 'text-acid-300' : 'text-mist-400' %>"><%= club.rank %></td>
+              <td class="max-w-[220px] text-left">
+                <a href="/teams/<%= club.teamId %>" class="ko-focus flex items-center gap-2 text-mist-100 transition-colors duration-200 hover:text-acid-300">
+                  <%- include("partials/img", { id: club.teamId, name: club.teamName, kind: 'team', size: 'xs' }) %>
+                  <span class="truncate font-medium"><%= club.teamName %></span>
+                </a>
+              </td>
+              <td class="max-w-[170px] text-left">
+                <span class="flex items-center gap-2">
+                  <%- include("partials/img", { id: club.leagueId, name: club.leagueName, kind: 'league', size: 'xs' }) %>
+                  <span class="truncate text-[11px] text-mist-500"><%= club.leagueName %></span>
+                </span>
+              </td>
+              <td class="ko-tabular text-mist-400"><%= club.played %></td>
+              <td class="ko-tabular font-bold text-mist-100"><%= club.pts %></td>
+              <td class="ko-tabular text-mist-300"><%= club.gd > 0 ? '+' + club.gd : club.gd %></td>
+              <td class="ko-tabular text-mist-300"><%= club.xgd === null || club.xgd === undefined ? '—' : (club.xgd > 0 ? '+' : '') + Number(club.xgd).toFixed(1).replace('.', ',') %></td>
+              <td class="text-left">
+                <span class="flex gap-1">
+                  <% (club.form || '').split('').slice(-5).forEach(function (r) { %>
+                    <span class="grid h-[18px] w-[18px] place-items-center rounded-[4px] text-[9px] font-bold <%= r === 'W' ? 'bg-acid-400 text-ink-950' : (r === 'D' ? 'bg-ink-600 text-mist-200' : 'bg-blood-500 text-white') %>"><%= r %></span>
+                  <% }); %>
+                </span>
+              </td>
+              <td class="ko-tabular">
+                <span class="flex items-center justify-end gap-2">
+                  <span class="ko-bar hidden w-16 lg:block"><span class="block h-full bg-acid-400" style="width:<%= Math.round((club.score / maxClubScore) * 100) %>%"></span></span>
+                  <span class="font-bold text-mist-100"><%= idx(club.score) %></span>
+                </span>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile : cartes -->
+    <div class="space-y-2 md:hidden">
+      <% clubList.slice(0, 12).forEach(function (club) { %>
+        <a href="/teams/<%= club.teamId %>" class="ko-focus flex items-center gap-3 border border-line bg-ink-900 px-3 py-2.5 transition-colors duration-200 hover:border-line-strong">
+          <span class="ko-tabular w-6 shrink-0 font-display text-[15px] font-bold <%= club.rank <= 3 ? 'text-acid-300' : 'text-mist-500' %>"><%= club.rank %></span>
+          <%- include("partials/img", { id: club.teamId, name: club.teamName, kind: 'team', size: 'sm' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-[13px] font-medium text-mist-100"><%= club.teamName %></span>
+            <span class="block truncate text-[11px] text-mist-500"><%= club.leagueName %> · <%= club.detail %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[16px] font-bold text-mist-50"><%= idx(club.score) %></span>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- ===================== CLASSEMENT DES JOUEURS ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", { title: 'Meilleurs joueurs', meta: '<span class="text-[11px] text-mist-500">note du meilleur XI</span>' }) %>
+
+  <% if (playerList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucun joueur classé', message: 'Les meilleurs XI de saison ne sont pas encore disponibles.', icon: 'star' }) %>
+  <% } else { %>
+    <div class="hidden overflow-x-auto border border-line bg-ink-900 md:block">
+      <table class="ko-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" class="text-left">Joueur</th>
+            <th scope="col" class="text-left">Club</th>
+            <th scope="col" class="text-left">Pos.</th>
+            <th scope="col">Note</th>
+            <th scope="col">Buts</th>
+            <th scope="col">Passes</th>
+            <th scope="col">Matchs</th>
+            <th scope="col">Indice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% playerList.forEach(function (player) { %>
+            <tr>
+              <td class="ko-tabular font-display text-[13px] font-bold <%= player.rank <= 3 ? 'text-acid-300' : 'text-mist-400' %>"><%= player.rank %></td>
+              <td class="max-w-[220px] text-left">
+                <a href="/players/<%= player.playerId %>" class="ko-focus flex items-center gap-2 text-mist-100 transition-colors duration-200 hover:text-acid-300">
+                  <%- include("partials/img", { id: player.playerId, name: player.playerName, kind: 'player', size: 'sm', round: true, fit: 'cover' }) %>
+                  <span class="truncate font-medium"><%= player.playerName %></span>
+                </a>
+              </td>
+              <td class="max-w-[160px] truncate text-left text-[11px] text-mist-500">
+                <a href="/teams/<%= player.teamId %>" class="ko-focus transition-colors duration-200 hover:text-acid-300"><%= player.teamName %></a>
+              </td>
+              <td class="text-left text-[11px] text-mist-500"><%= posLabel(player.position) %></td>
+              <td class="ko-tabular font-bold <%= player.rating && player.rating >= 8 ? 'text-acid-300' : 'text-mist-100' %>"><%= player.rating === null || player.rating === undefined ? '—' : Number(player.rating).toFixed(2).replace('.', ',') %></td>
+              <td class="ko-tabular text-mist-100"><%= player.goals %></td>
+              <td class="ko-tabular text-mist-300"><%= player.assists %></td>
+              <td class="ko-tabular text-mist-400"><%= player.matches %></td>
+              <td class="ko-tabular">
+                <span class="flex items-center justify-end gap-2">
+                  <span class="ko-bar hidden w-16 lg:block"><span class="block h-full bg-acid-400" style="width:<%= Math.round((player.score / maxPlayerScore) * 100) %>%"></span></span>
+                  <span class="font-bold text-mist-100"><%= idx(player.score) %></span>
+                </span>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="space-y-2 md:hidden">
+      <% playerList.slice(0, 10).forEach(function (player) { %>
+        <a href="/players/<%= player.playerId %>" class="ko-focus flex items-center gap-3 border border-line bg-ink-900 px-3 py-2.5 transition-colors duration-200 hover:border-line-strong">
+          <span class="ko-tabular w-6 shrink-0 font-display text-[15px] font-bold <%= player.rank <= 3 ? 'text-acid-300' : 'text-mist-500' %>"><%= player.rank %></span>
+          <%- include("partials/img", { id: player.playerId, name: player.playerName, kind: 'player', size: 'sm', round: true, fit: 'cover' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-[13px] font-medium text-mist-100"><%= player.playerName %></span>
+            <span class="block truncate text-[11px] text-mist-500"><%= player.teamName %> · <%= player.detail %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[16px] font-bold text-mist-50"><%= idx(player.score) %></span>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- ===================== CLASSEMENT DES COMPÉTITIONS ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", { title: 'Meilleures compétitions', meta: '<span class="text-[11px] text-mist-500">intensité de la saison</span>' }) %>
+
+  <% if (compList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucune compétition analysée', message: 'Les classements de compétitions ne sont pas encore disponibles.', icon: 'trophy' }) %>
+  <% } else { %>
+    <div class="hidden overflow-x-auto border border-line bg-ink-900 md:block">
+      <table class="ko-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" class="text-left">Compétition</th>
+            <th scope="col" class="text-left">Pays</th>
+            <th scope="col">Clubs</th>
+            <th scope="col">Matchs</th>
+            <th scope="col">Buts/match</th>
+            <th scope="col">Écart xG</th>
+            <th scope="col" class="text-left">Leader</th>
+            <th scope="col">Indice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% compList.forEach(function (comp) { %>
+            <tr>
+              <td class="ko-tabular font-display text-[13px] font-bold <%= comp.rank <= 3 ? 'text-acid-300' : 'text-mist-400' %>"><%= comp.rank %></td>
+              <td class="max-w-[200px] text-left">
+                <a href="/leagues/<%= comp.leagueId %>" class="ko-focus flex items-center gap-2 text-mist-100 transition-colors duration-200 hover:text-acid-300">
+                  <%- include("partials/img", { id: comp.leagueId, name: comp.leagueName, kind: 'league', size: 'xs' }) %>
+                  <span class="truncate font-medium"><%= comp.leagueName %></span>
+                </a>
+              </td>
+              <td class="text-left text-[11px] text-mist-500"><%= comp.country %></td>
+              <td class="ko-tabular text-mist-400"><%= comp.teams %></td>
+              <td class="ko-tabular text-mist-400"><%= comp.matches %></td>
+              <td class="ko-tabular text-mist-100"><%= comp.avgGoals === null ? '—' : Number(comp.avgGoals).toFixed(1).replace('.', ',') %></td>
+              <td class="ko-tabular text-mist-300"><%= comp.avgXgDiff === null ? '—' : Number(comp.avgXgDiff).toFixed(2).replace('.', ',') %></td>
+              <td class="max-w-[160px] truncate text-left text-[11px] text-mist-400">
+                <% if (comp.leader) { %><%= comp.leader %> <span class="text-mist-600">(<%= comp.leaderPoints %>)</span><% } else { %>—<% } %>
+              </td>
+              <td class="ko-tabular">
+                <span class="flex items-center justify-end gap-2">
+                  <span class="ko-bar hidden w-16 lg:block"><span class="block h-full bg-acid-400" style="width:<%= Math.round((comp.score / maxCompScore) * 100) %>%"></span></span>
+                  <span class="font-bold text-mist-100"><%= idx(comp.score) %></span>
+                </span>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="space-y-2 md:hidden">
+      <% compList.forEach(function (comp) { %>
+        <a href="/leagues/<%= comp.leagueId %>" class="ko-focus flex items-center gap-3 border border-line bg-ink-900 px-3 py-2.5 transition-colors duration-200 hover:border-line-strong">
+          <span class="ko-tabular w-6 shrink-0 font-display text-[15px] font-bold <%= comp.rank <= 3 ? 'text-acid-300' : 'text-mist-500' %>"><%= comp.rank %></span>
+          <%- include("partials/img", { id: comp.leagueId, name: comp.leagueName, kind: 'league', size: 'sm' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-[13px] font-medium text-mist-100"><%= comp.leagueName %></span>
+            <span class="block truncate text-[11px] text-mist-500"><%= comp.country %> · <%= comp.detail %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[16px] font-bold text-mist-50"><%= idx(comp.score) %></span>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- ===================== MÉTHODE ===================== -->
+<section class="border border-line bg-ink-850 p-4 md:p-5">
+  <h2 class="ko-eyebrow mb-2 text-[11px] text-mist-400">Comment les indices sont calculés</h2>
+  <div class="grid gap-3 text-[11px] leading-relaxed text-mist-400 md:grid-cols-3">
+    <p>
+      <span class="block font-semibold text-mist-200">Club</span>
+      60 × (points par match ÷ 3) + 20 × (différence de xG par match) + 20 × (différence de buts par match),
+      pondéré par la fiabilité (matchs joués ÷ 8, plafonné à 1).
+    </p>
+    <p>
+      <span class="block font-semibold text-mist-200">Compétition</span>
+      12 × buts moyens par match + 30 × écart de xG moyen + 20 × (points par match ÷ 3) —
+      intensité et équilibre du championnat.
+    </p>
+    <p>
+      <span class="block font-semibold text-mist-200">Joueur</span>
+      10 × note moyenne dans le meilleur XI de la saison ; les buts viennent du classement
+      des buteurs de la compétition.
+    </p>
+  </div>
+  <% if (generated) { %>
+    <p class="mt-3 text-[10px] text-mist-600">Calculé le <%= fmt.date(generated, { withTime: true }) %> · <%= leaguesAnalysed %> compétitions analysées · mis à jour toutes les 30 minutes.</p>
+  <% } %>
+</section>

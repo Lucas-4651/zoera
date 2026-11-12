@@ -1,0 +1,97 @@
+<%
+  const leagueList = leagues || [];
+  const countryList = countries || [];
+  const women = womenCount || 0;
+  const men = menCount || 0;
+
+  const byCountry = [];
+  const countryIndex = {};
+  countryList.forEach(function (c) {
+    countryIndex[c] = [];
+    byCountry.push({ name: c, leagues: countryIndex[c] });
+  });
+  leagueList.forEach(function (lg) {
+    if (!countryIndex[lg.country]) {
+      countryIndex[lg.country] = [];
+      byCountry.push({ name: lg.country, leagues: countryIndex[lg.country] });
+    }
+    countryIndex[lg.country].push(lg);
+  });
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Compétitions',
+  title: 'Toutes les ligues',
+  subtitle: 'Classements, meilleurs buteurs et calendrier de chaque compétition suivi.'
+}) %>
+
+<!-- Filtres -->
+<div class="mb-6 flex flex-col gap-3 border border-line bg-ink-850 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+  <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer par catégorie">
+    <button type="button" data-league-gender="" aria-pressed="true"
+            class="ko-focus min-h-[40px] rounded-pill border border-acid-500/50 bg-acid-500/12 px-4 text-[12px] font-semibold text-acid-300 transition-colors duration-200">
+      Toutes <span class="ko-tabular opacity-70">(<%= leagueList.length %>)</span>
+    </button>
+    <button type="button" data-league-gender="men" aria-pressed="false"
+            class="ko-focus min-h-[40px] rounded-pill border border-line bg-ink-800 px-4 text-[12px] font-semibold text-mist-300 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">
+      Hommes <span class="ko-tabular opacity-70">(<%= men %>)</span>
+    </button>
+    <button type="button" data-league-gender="women" aria-pressed="false"
+            class="ko-focus min-h-[40px] rounded-pill border border-line bg-ink-800 px-4 text-[12px] font-semibold text-mist-300 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">
+      Femmes <span class="ko-tabular opacity-70">(<%= women %>)</span>
+    </button>
+  </div>
+
+  <% if (countryList.length > 1) { %>
+    <label class="flex items-center gap-2">
+      <span class="ko-eyebrow text-[11px] text-mist-500">Pays</span>
+      <select data-league-country class="ko-focus h-10 w-full max-w-[200px] rounded-[10px] border border-line bg-ink-800 px-3 text-[12px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+        <option value="">Tous les pays</option>
+        <% countryList.forEach(function (c) { %>
+          <option value="<%= c %>"><%= c %></option>
+        <% }); %>
+      </select>
+    </label>
+  <% } %>
+</div>
+
+<% if (leagueList.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucune compétition', message: 'Aucune compétition active n’est disponible dans les données actuelles.', icon: 'trophy' }) %>
+<% } else { %>
+  <div class="flex flex-col gap-8">
+    <% byCountry.forEach(function (block) { %>
+      <% if (block.leagues.length === 0) { return; } %>
+      <section data-country="<%= block.name %>">
+        <!--
+          Libellé de regroupement (pays) : volontairement_aligné à gauche en
+          sur-titre discret. Ce n'est pas un titre de page : empiler une
+          douzaine de titres centrés casserait la lecture de la liste. Le seul
+          titre de cette page est le h1 de partials/page-head, centré.
+        -->
+        <h2 class="ko-eyebrow mb-3 flex items-center gap-2.5 text-[11px] text-mist-400">
+          <span class="h-4 w-[3px] rounded-full bg-acid-400"></span><%= block.name %>
+          <span class="ko-tabular text-mist-600">(<%= block.leagues.length %>)</span>
+        </h2>
+        <ul class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <% block.leagues.forEach(function (lg) { %>
+            <li data-league-gender-item="<%= lg.isWomen ? 'women' : 'men' %>" data-league-country-item="<%= lg.country %>">
+              <a href="/leagues/<%= lg.id %>"
+                 class="ko-focus group flex h-full flex-col items-center gap-3 border border-line bg-ink-900 p-4 text-center transition-colors duration-200 hover:border-line-strong hover:bg-ink-850">
+                <%- include("partials/img", { id: lg.id, name: lg.name, kind: 'league', size: 'lg' }) %>
+                <span class="min-w-0 w-full">
+                  <span class="block font-display text-[15px] leading-tight font-bold text-balance text-mist-50 transition-colors duration-200 group-hover:text-acid-300"><%= lg.name %></span>
+                  <span class="mt-1.5 flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-mist-500">
+                    <span><%= lg.country %></span>
+                    <% if (lg.isWomen) { %><span class="rounded-pill border border-line px-1.5 py-0.5 text-[9px] text-mist-400">Féminin</span><% } %>
+                    <% if (lg.currentSeason) { %><span class="rounded-pill border border-acid-500/30 bg-acid-500/10 px-1.5 py-0.5 text-[9px] text-acid-300"><%= lg.currentSeason.name %></span><% } %>
+                    <% if (!lg.isActive) { %><span class="rounded-pill border border-line px-1.5 py-0.5 text-[9px] text-mist-500">Inactive</span><% } %>
+                  </span>
+                </span>
+              </a>
+            </li>
+          <% }); %>
+        </ul>
+      </section>
+    <% }); %>
+  </div>
+<% } %>

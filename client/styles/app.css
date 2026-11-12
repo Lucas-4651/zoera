@@ -1,0 +1,302 @@
+@import "tailwindcss";
+
+/* Tailwind v4 : les templates EJS ne sont pas détectés automatiquement */
+@source "../../server";
+@source "../../client";
+
+/* ==========================================================================
+   Zoera — jetons de design
+   Fond très sombre, UN accent électrique (vert terrain), rouge carton.
+   ========================================================================== */
+@theme {
+  /* --- Typo ------------------------------------------------------------ */
+  --font-display: "Archivo Expanded", "Anton", "Oswald", "Haettenschweiler",
+    "Arial Narrow", "Liberation Sans Narrow", "DejaVu Sans Condensed", Impact,
+    system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", "Liberation Sans", Arial, sans-serif;
+
+  /* --- Fonds & surfaces (surfaces légèrement élevées, pas de cards) ----- */
+  --color-ink-950: #06080b;
+  --color-ink-900: #0a0d12;
+  --color-ink-850: #0d121a;
+  --color-ink-800: #121821;
+  --color-ink-750: #161d27;
+  --color-ink-700: #1b2430;
+  --color-ink-600: #232e3c;
+
+  /* --- Séparateurs 1px ------------------------------------------------- */
+  --color-line: #1d2632;
+  --color-line-strong: #2b3846;
+
+  /* --- Texte ----------------------------------------------------------- */
+  --color-mist-50: #f5f8fb;
+  --color-mist-100: #e6ecf3;
+  --color-mist-200: #b7c1cf;
+  --color-mist-300: #8e9aab;
+  --color-mist-400: #6c7889;
+  --color-mist-500: #55606f;
+
+  /* --- Accent électrique : vert terrain -------------------------------- */
+  --color-acid-100: #f2ffd6;
+  --color-acid-200: #e4ff94;
+  --color-acid-300: #d4ff55;
+  --color-acid-400: #cdf542;
+  --color-acid-500: #b0dd24;
+  --color-acid-600: #8bb118;
+  --color-acid-700: #6a870f;
+  --color-acid-950: #16210a;
+
+  /* --- Rouge carton ---------------------------------------------------- */
+  --color-blood-200: #ffd4d7;
+  --color-blood-300: #ff8b93;
+  --color-blood-400: #f2555f;
+  --color-blood-500: #d92d3a;
+  --color-blood-600: #a51f2a;
+  --color-blood-950: #2a0a0d;
+
+  /* --- Ambre (statut « retard », à venir) ----------------------------- */
+  --color-amber-400: #e0a336;
+  --color-amber-500: #b97c1c;
+
+  /* --- Rayons ---------------------------------------------------------- */
+  --radius-panel: 16px;
+  --radius-cell: 10px;
+  --radius-pill: 999px;
+
+  /* --- Animations ------------------------------------------------------ */
+  --animate-live-pulse: live-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-rise: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-flash: flash 0.9s ease-out both;
+
+  @keyframes live-pulse {
+    0% { box-shadow: 0 0 0 0 rgb(205 245 66 / 0.55); }
+    70% { box-shadow: 0 0 0 7px rgb(205 245 66 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(205 245 66 / 0); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes flash {
+    from { background-color: rgb(205 245 66 / 0.22); }
+    to { background-color: transparent; }
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+html {
+  background-color: var(--color-ink-900);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  /* halo très discret en haut de page */
+  background-image:
+    radial-gradient(120% 60% at 50% -20%, rgb(205 245 66 / 0.06), transparent 60%),
+    linear-gradient(180deg, var(--color-ink-900) 0%, var(--color-ink-950) 100%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background-color: var(--color-acid-400);
+  color: var(--color-ink-950);
+}
+
+/* Chiffres tabulaires : scores et stats alignés */
+.ko-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ==========================================================================
+   Composants maison
+   ========================================================================== */
+
+/* Grain fin, texture de fond (SVG inline, aucun CDN) */
+.ko-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Point LIVE qui pulse */
+.ko-live-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: var(--color-acid-400);
+  animation: var(--animate-live-pulse);
+}
+
+/* Rail horizontal défilant (accueil) */
+.ko-rail {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.ko-rail::-webkit-scrollbar {
+  display: none;
+}
+.ko-rail > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* Titre de section : filet + petites capitales condensées */
+.ko-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Logo unifié (Image API BSD) — conteneur de taille fixe, repli initiales.
+   La teinte stable du nom est exposée via --ko-hue : les zones « vitrine »
+   peuvent s'en servir pour teinter un halo sans casser la palette du site. */
+.ko-logo {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-ink-800);
+}
+.ko-logo > img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Barre de progression (possession, probabilités) */
+.ko-bar {
+  height: 0.375rem;
+  border-radius: 999px;
+  background-color: var(--color-ink-700);
+  overflow: hidden;
+}
+
+/* Focus visible (accessibilité) */
+.ko-focus:focus-visible {
+  outline: 2px solid var(--color-acid-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lien d'évitement */
+.ko-skip:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 80;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 0.875rem;
+  clip: auto;
+}
+
+/* Onglets : soulignement animé */
+[data-tab-target] {
+  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+[data-tab-target][aria-selected="true"] {
+  color: var(--color-acid-300);
+  border-color: var(--color-acid-400);
+}
+
+/* Icône favori */
+[data-fav] svg {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms ease;
+}
+[data-fav][aria-pressed="true"] {
+  color: var(--color-acid-300);
+}
+[data-fav][aria-pressed="true"] svg {
+  transform: scale(1.12);
+}
+
+/* Entrée en scène (stagger) */
+.ko-rise {
+  animation: var(--animate-rise);
+}
+
+.ko-flash {
+  animation: var(--animate-flash);
+}
+
+/* Ligne de tableau dense */
+.ko-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.ko-table th {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-mist-400);
+  font-weight: 600;
+  padding: 0.5rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.ko-table th:first-child,
+.ko-table td:first-child {
+  text-align: left;
+}
+.ko-table td {
+  padding: 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+  border-top: 1px solid var(--color-line);
+}
+/* Colonnes textuelles (nom, ligue, position…) alignées à gauche */
+.ko-table th.ko-left,
+.ko-table td.ko-left {
+  text-align: left;
+}
+/* Variante compacte : gouttières réduites pour tenir les colonnes
+   essentielles dans 390 px sans défilement horizontal. Les colonnes
+   secondaires sont masquées côté template (`hidden sm:table-cell`).
+   Le CSS du projet est hors layer : il l'emporte sur les utilitaires
+   Tailwind, la variante doit donc passer par une classe dédiée. */
+.ko-table-compact th,
+.ko-table-compact td {
+  padding: 0.375rem 0.25rem;
+}
+@media (min-width: 640px) {
+  .ko-table-compact th,
+  .ko-table-compact td {
+    padding: 0.5rem;
+  }
+}
+.ko-table tbody tr {
+  transition: background-color 160ms ease;
+}
+.ko-table tbody tr:hover {
+  background-color: var(--color-ink-850);
+}
+
+/* ==== respect de la préférence système ==== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

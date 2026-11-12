@@ -1,0 +1,105 @@
+<%
+  const eventList = (typeof events !== 'undefined' && events) ? events : [];
+  const leagueList = (typeof leagues !== 'undefined' && leagues) ? leagues : [];
+  const currentDate = date || '';
+  const dayName = currentDate ? fmt.dayLabel(currentDate) : '';
+  const longDate = currentDate ? fmt.date(currentDate) : '';
+
+  // Bande de 7 jours autour de la date courante
+  const strip = [];
+  if (currentDate) {
+    const base = new Date(currentDate + 'T00:00:00Z');
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(base.getTime() + i * 86400000);
+      const iso = d.toISOString().slice(0, 10);
+      const label = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][d.getUTCDay()];
+      strip.push({ iso: iso, day: label, num: d.getUTCDate(), isCurrent: iso === currentDate });
+    }
+  }
+
+  // Liste des compétitions présentes dans les matchs du jour
+  const comps = [];
+  const seen = {};
+  eventList.forEach(function (ev) {
+    if (!seen[ev.leagueId]) {
+      const found = leagueList.filter(function (l) { return l.id === ev.leagueId; })[0];
+      seen[ev.leagueId] = { id: ev.leagueId, name: (found && found.name) || ev.leagueName || 'Autres compétitions', events: [] };
+      comps.push(seen[ev.leagueId]);
+    }
+    seen[ev.leagueId].events.push(ev);
+  });
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Calendrier',
+  title: dayName ? dayName.charAt(0).toUpperCase() + dayName.slice(1) : 'Calendrier',
+  subtitle: longDate
+}) %>
+
+<!-- Navigation par date : flèche / date centrée / flèche -->
+<div class="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border border-line bg-ink-850 px-2 py-2">
+  <a href="/fixtures/<%= prevDate %>" class="ko-focus inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-line bg-ink-800 px-3 text-[13px] font-medium text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50" aria-label="Jour précédent">
+    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+    <span class="hidden sm:inline">Précédent</span>
+  </a>
+  <a href="/fixtures" class="ko-focus flex min-h-[44px] flex-col items-center justify-center rounded-[10px] border border-acid-500/40 bg-acid-500/10 px-3 text-center">
+    <span class="font-display text-[15px] font-bold tracking-tight text-acid-300 md:text-[17px]"><%= dayName ? dayName : 'Aujourd’hui' %></span>
+    <span class="ko-tabular text-[10px] text-mist-500"><%= longDate %></span>
+  </a>
+  <a href="/fixtures/<%= nextDate %>" class="ko-focus inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-line bg-ink-800 px-3 text-[13px] font-medium text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50" aria-label="Jour suivant">
+    <span class="hidden sm:inline">Suivant</span>
+    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+  </a>
+</div>
+
+<% if (strip.length) { %>
+  <div class="ko-rail mb-4 -mx-3 px-3 md:mx-0 md:px-0">
+    <% strip.forEach(function (d) { %>
+      <a href="/fixtures/<%= d.iso %>" aria-current="<%= d.isCurrent ? 'date' : 'false' %>"
+         class="ko-focus flex min-h-[62px] w-[58px] flex-col items-center justify-center gap-0.5 rounded-[12px] border transition-colors duration-200 <%= d.isCurrent ? 'border-acid-500/60 bg-acid-500/12 text-acid-300' : 'border-line bg-ink-850 text-mist-300 hover:border-line-strong' %>">
+        <span class="text-[10px] tracking-wide uppercase opacity-70"><%= d.day %></span>
+        <span class="ko-tabular font-display text-[17px] font-bold"><%= d.num %></span>
+      </a>
+    <% }); %>
+  </div>
+<% } %>
+
+<!-- Filtre par compétition -->
+<% if (comps.length > 1) { %>
+  <div class="mb-5 flex items-center gap-3">
+    <label for="league-filter" class="ko-eyebrow shrink-0 text-[11px] text-mist-500">Compétition</label>
+    <select id="league-filter" data-league-filter
+            class="ko-focus h-11 w-full max-w-xs rounded-[10px] border border-line bg-ink-850 px-3 text-[13px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+      <option value="">Toutes les compétitions</option>
+      <% comps.forEach(function (c) { %>
+        <option value="<%= c.id %>"><%= c.name %></option>
+      <% }); %>
+    </select>
+  </div>
+<% } %>
+
+<% if (eventList.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucun match ce jour-là', message: 'Aucune rencontre n’est programmée pour cette date. Utilisez les flèches pour explorer le calendrier.', icon: 'calendar' }) %>
+<% } else { %>
+  <div class="flex flex-col gap-8">
+    <% comps.forEach(function (comp) { %>
+      <section data-competition="<%= comp.id %>">
+        <!-- Bandeau de compétition : logo + nom, centré -->
+        <div class="mb-3 flex flex-col items-center gap-2">
+          <div class="flex items-center gap-2.5">
+            <%- include("partials/logo", { id: comp.id, name: comp.name, kind: 'league', size: 'sm' }) %>
+            <h2 class="font-display text-[17px] font-bold tracking-tight text-mist-50 md:text-[20px]"><%= comp.name %></h2>
+          </div>
+          <span class="ko-tabular rounded-pill border border-line bg-ink-850 px-2.5 py-0.5 text-[10px] text-mist-400">
+            <%= comp.events.length %> <%= comp.events.length > 1 ? 'matchs' : 'match' %>
+          </span>
+        </div>
+        <ul class="border border-line bg-ink-900">
+          <% comp.events.forEach(function (ev) { %>
+            <%- include("partials/match-row", { event: ev }) %>
+          <% }); %>
+        </ul>
+      </section>
+    <% }); %>
+  </div>
+<% } %>

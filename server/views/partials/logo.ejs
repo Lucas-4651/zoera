@@ -1,0 +1,16 @@
+<%
+  /* Alias du partial unifié d'images — conserve la compatibilité avec les
+     appels include("partials/logo", …). Tout le comportement (URL par kind,
+     repli initiales teinté, boîte de taille fixe, object-fit, onerror) est
+     défini dans partials/img.ejs. */
+%>
+<%- include("img", {
+      id: (typeof id !== 'undefined' ? id : null),
+      name: (typeof name !== 'undefined' ? name : ''),
+      kind: (typeof kind !== 'undefined' && kind ? kind : 'team'),
+      size: (typeof size !== 'undefined' && size ? size : 'md'),
+      alt: (typeof alt !== 'undefined' ? alt : ''),
+      round: (typeof round !== 'undefined' ? !!round : false),
+      fit: (typeof fit !== 'undefined' && fit ? fit : 'contain'),
+      src: (typeof src !== 'undefined' ? src : '')
+    }) %>

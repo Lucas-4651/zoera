@@ -1,0 +1,324 @@
+<%
+  const liveList = live || [];
+  const todayList = today || [];
+  const tomorrowList = tomorrow || [];
+  const leagueList = leagues || [];
+  const scorers = topScorers || [];
+  const preds = predictions || [];
+  const results = lastResults || [];
+  const liveCount = liveList.length;
+
+  /* Section « Palmarès » : les 3 vedettes, si le backend fournit le bloc
+     `featured` (CONTRACT.md §7.2). Sans données, on propose un simple appel
+     vers la page /palmares plutôt qu'une bande vide. */
+  const palmaresFeatured = (typeof featured !== 'undefined' && featured)
+    ? featured
+    : ((typeof palmares !== 'undefined' && palmares)
+        ? (palmares.featured || ((palmares.club || palmares.player || palmares.competition) ? palmares : null))
+        : null);
+  const featClub = palmaresFeatured ? palmaresFeatured.club : null;
+  const featPlayer = palmaresFeatured ? palmaresFeatured.player : null;
+  const featComp = palmaresFeatured ? palmaresFeatured.competition : null;
+  const featScore = function (s) {
+    if (s === null || s === undefined || typeof s !== 'number' || !isFinite(s)) return '—';
+    return fmt.number(s, { decimals: 1 });
+  };
+%>
+
+<!-- ===================== HERO ===================== -->
+<section class="relative mb-6 overflow-hidden border border-line bg-ink-850">
+  <div class="pointer-events-none absolute inset-0 opacity-70" aria-hidden="true"
+       style="background-image:radial-gradient(90% 120% at 85% 0%,rgba(205,245,66,.10),transparent 55%),linear-gradient(180deg,rgba(18,24,33,.2),rgba(10,13,18,.9));"></div>
+  <div class="relative flex flex-col items-center gap-6 px-4 py-7 text-center md:px-7 md:py-10">
+    <div class="min-w-0">
+      <p class="ko-eyebrow mb-2 flex items-center justify-center gap-2 text-[11px] text-acid-400">
+        <% if (liveCount > 0) { %><span class="ko-live-dot" aria-hidden="true"></span><% } %>
+        <%= liveCount > 0 ? liveCount + (liveCount > 1 ? ' matchs en direct' : ' match en direct') : 'Football temps réel' %>
+      </p>
+      <h1 class="font-display text-[34px] leading-[0.9] font-bold tracking-tight text-mist-50 md:text-[52px]">
+        ZO<span class="text-acid-400">ERA</span>
+      </h1>
+      <p class="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-mist-400">
+        Scores en direct, calendrier, classements, statistiques xG et prédictions — toutes les compétitions en un coup d'œil.
+      </p>
+    </div>
+    <div class="flex shrink-0 flex-wrap items-center justify-center gap-2">
+      <a href="/live" class="ko-focus inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-acid-500/40 bg-acid-500/12 px-4 text-[13px] font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">
+        <span class="ko-live-dot" aria-hidden="true"></span>Voir le direct
+      </a>
+      <a href="/fixtures" class="ko-focus inline-flex min-h-[44px] items-center rounded-[10px] border border-line bg-ink-800 px-4 text-[13px] font-semibold text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">
+        Calendrier
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== RAIL EN DIRECT ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'En direct',
+    meta: '<a href="/live" class="ko-focus text-[12px] font-medium text-mist-400 transition-colors duration-200 hover:text-acid-300">Tout le direct →</a>'
+  }) %>
+
+  <% if (liveList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucun match en direct', message: 'Les matchs en cours de toutes les compétitions apparaîtront ici en temps réel.', icon: 'radio' }) %>
+  <% } else { %>
+    <div class="ko-rail -mx-3 px-3 md:mx-0 md:px-0">
+      <% liveList.forEach(function (ev) { %>
+        <%
+          const sc = (ev.homeScore || 0) + ' – ' + (ev.awayScore || 0);
+        %>
+        <a href="/match/<%= ev.id %>"
+           data-live-match data-event-id="<%= ev.id %>" data-league-id="<%= ev.leagueId %>" data-status="<%= ev.status %>"
+           data-minute="<%= ev.minute === null || ev.minute === undefined ? '' : ev.minute %>"
+           data-home-score="<%= ev.homeScore === null || ev.homeScore === undefined ? '' : ev.homeScore %>"
+           data-away-score="<%= ev.awayScore === null || ev.awayScore === undefined ? '' : ev.awayScore %>"
+           class="ko-focus flex w-[240px] flex-col gap-2.5 rounded-panel border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+          <div class="flex items-center justify-between gap-2">
+            <span class="truncate text-[10px] tracking-wide text-mist-500 uppercase"><%= ev.leagueName || '' %></span>
+            <%- include("partials/status-badge", { status: ev.status, minute: ev.minute, period: ev.period }) %>
+          </div>
+          <div class="flex items-center justify-center gap-2.5">
+            <div class="flex flex-col-reverse items-center gap-1">
+              <span class="line-clamp-1 max-w-[72px] text-center text-[10px] leading-tight text-mist-400"><%= ev.homeTeam %></span>
+              <%- include("partials/img", { id: ev.homeTeamId, name: ev.homeTeam, kind: 'team', size: 'md' }) %>
+            </div>
+            <span class="ko-tabular font-display text-[22px] leading-none font-bold text-acid-300" data-live-score><%= sc %></span>
+            <div class="flex flex-col items-center gap-1">
+              <%- include("partials/img", { id: ev.awayTeamId, name: ev.awayTeam, kind: 'team', size: 'md' }) %>
+              <span class="line-clamp-1 max-w-[72px] text-center text-[10px] leading-tight text-mist-400"><%= ev.awayTeam %></span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- ===================== MATCHS DU JOUR ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'Matchs du jour',
+    meta: '<a href="/fixtures" class="ko-focus text-[12px] font-medium text-mist-400 transition-colors duration-200 hover:text-acid-300">Calendrier complet →</a>'
+  }) %>
+  <% if (todayList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Pas de match aujourd’hui', message: 'Aucune rencontre n’est programmée pour cette date.', icon: 'calendar' }) %>
+  <% } else { %>
+    <ul class="border border-line bg-ink-900">
+      <% todayList.forEach(function (ev) { %>
+        <%- include("partials/match-row", { event: ev }) %>
+      <% }); %>
+    </ul>
+  <% } %>
+</section>
+
+<!-- ===================== RÉSULTATS + BUTEURS ===================== -->
+<section class="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+  <div>
+    <%- include("partials/section-head", { title: 'Derniers résultats' }) %>
+    <% if (results.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Aucun résultat', message: 'Les scores des matchs terminés apparaîtront ici.', icon: 'calendar' }) %>
+    <% } else { %>
+      <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <% results.forEach(function (ev) { %>
+          <li>
+            <a href="/match/<%= ev.id %>" class="ko-focus flex h-full flex-col gap-2 rounded-panel border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+              <span class="truncate text-[10px] tracking-wide text-mist-500 uppercase"><%= ev.leagueName || '' %></span>
+              <span class="flex items-center justify-between gap-2 text-[12px]">
+                <span class="min-w-0 flex-1 truncate text-right text-mist-200"><%= ev.homeTeam %></span>
+                <span class="ko-tabular font-display text-[17px] font-bold text-mist-50"><%= ev.homeScore %>–<%= ev.awayScore %></span>
+                <span class="min-w-0 flex-1 truncate text-mist-200"><%= ev.awayTeam %></span>
+              </span>
+              <span class="ko-tabular text-[10px] text-mist-500"><%= fmt.date(ev.date, { withTime: true }) %></span>
+            </a>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+
+  <div>
+    <%- include("partials/section-head", { title: 'Top buteurs' }) %>
+    <% if (scorers.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Classement indisponible', message: 'Le classement des buts n’est pas encore disponible.', icon: 'trophy' }) %>
+    <% } else { %>
+      <ol class="border border-line bg-ink-900">
+        <% scorers.slice(0, 10).forEach(function (p) { %>
+          <li class="flex items-center gap-3 border-b border-line/80 px-3 py-2.5 last:border-b-0">
+            <span class="ko-tabular w-5 shrink-0 text-right font-display text-[15px] font-bold <%= p.rank <= 3 ? 'text-acid-400' : 'text-mist-500' %>"><%= p.rank %></span>
+            <%- include("partials/img", { id: p.playerId, name: p.playerName, kind: 'player', size: 'sm', round: true, fit: 'cover' }) %>
+            <a href="/players/<%= p.playerId %>" class="min-w-0 flex-1">
+              <span class="block truncate text-[13px] font-medium text-mist-100 hover:text-acid-300"><%= p.playerName %></span>
+              <span class="block truncate text-[11px] text-mist-500"><%= p.teamName %></span>
+            </a>
+            <span class="ko-tabular shrink-0 font-display text-[18px] font-bold text-mist-50"><%= p.value %></span>
+          </li>
+        <% }); %>
+      </ol>
+    <% } %>
+  </div>
+</section>
+
+<!-- ===================== PALMARÉS ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'Palmarès',
+    meta: '<a href="/palmares" class="ko-focus text-[12px] font-medium text-mist-400 transition-colors duration-200 hover:text-acid-300">Tout le palmarès →</a>'
+  }) %>
+
+  <% if (!featClub && !featPlayer && !featComp) { %>
+    <a href="/palmares" class="ko-focus flex flex-col items-center gap-2 border border-line bg-ink-850 p-6 text-center transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+      <span class="ko-eyebrow text-[10px] text-mist-400">Palmarès</span>
+      <span class="font-display text-[17px] font-bold text-mist-50">Découvrir le palmarès de la saison</span>
+      <span class="text-[12px] text-mist-400">Meilleur club, meilleur joueur et meilleure compétition.</span>
+      <span class="mt-1 inline-flex items-center gap-2 text-[12px] font-medium text-acid-300">Ouvrir la page Palmarès →</span>
+    </a>
+  <% } else { %>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <% if (featClub) { %>
+        <div class="relative flex items-center gap-3 border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+          <%- include("partials/img", { id: featClub.teamId, name: featClub.teamName, kind: 'team', size: 'sm' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleur club</span>
+            <a href="/teams/<%= featClub.teamId %>" class="relative z-20 block truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= featClub.teamName %></a>
+            <span class="block truncate text-[10px] text-mist-500"><%= featClub.leagueName %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-acid-300"><%= featScore(featClub.score) %></span>
+          <a href="/palmares" class="ko-focus absolute inset-0 z-10" aria-label="Voir le palmarès — meilleur club : <%= featClub.teamName %>"></a>
+        </div>
+      <% } else { %>
+        <div class="flex items-center gap-3 border border-line bg-ink-850 p-3">
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] border border-line bg-ink-750 font-display text-[10px] font-bold text-mist-500" aria-hidden="true">—</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleur club</span>
+            <span class="block truncate text-[13px] font-medium text-mist-500">En cours de calcul</span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-mist-600">—</span>
+        </div>
+      <% } %>
+
+      <% if (featPlayer) { %>
+        <div class="relative flex items-center gap-3 border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+          <%- include("partials/img", { id: featPlayer.playerId, name: featPlayer.playerName, kind: 'player', size: 'sm', round: true, fit: 'cover' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleur joueur</span>
+            <a href="/players/<%= featPlayer.playerId %>" class="relative z-20 block truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= featPlayer.playerName %></a>
+            <span class="block truncate text-[10px] text-mist-500"><%= featPlayer.teamName %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-acid-300"><%= featScore(featPlayer.score) %></span>
+          <a href="/palmares" class="ko-focus absolute inset-0 z-10" aria-label="Voir le palmarès — meilleur joueur : <%= featPlayer.playerName %>"></a>
+        </div>
+      <% } else { %>
+        <div class="flex items-center gap-3 border border-line bg-ink-850 p-3">
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] border border-line bg-ink-750 font-display text-[10px] font-bold text-mist-500" aria-hidden="true">—</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleur joueur</span>
+            <span class="block truncate text-[13px] font-medium text-mist-500">En cours de calcul</span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-mist-600">—</span>
+        </div>
+      <% } %>
+
+      <% if (featComp) { %>
+        <div class="relative flex items-center gap-3 border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+          <%- include("partials/img", { id: featComp.leagueId, name: featComp.leagueName, kind: 'league', size: 'sm' }) %>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleure compétition</span>
+            <a href="/leagues/<%= featComp.leagueId %>" class="relative z-20 block truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= featComp.leagueName %></a>
+            <span class="block truncate text-[10px] text-mist-500"><%= featComp.country %></span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-acid-300"><%= featScore(featComp.score) %></span>
+          <a href="/palmares" class="ko-focus absolute inset-0 z-10" aria-label="Voir le palmarès — meilleure compétition : <%= featComp.leagueName %>"></a>
+        </div>
+      <% } else { %>
+        <div class="flex items-center gap-3 border border-line bg-ink-850 p-3">
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] border border-line bg-ink-750 font-display text-[10px] font-bold text-mist-500" aria-hidden="true">—</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[9px] tracking-[0.14em] text-mist-400 uppercase">Meilleure compétition</span>
+            <span class="block truncate text-[13px] font-medium text-mist-500">En cours de calcul</span>
+          </span>
+          <span class="ko-tabular shrink-0 font-display text-[22px] leading-none font-bold text-mist-600">—</span>
+        </div>
+      <% } %>
+    </div>
+
+    <a href="/palmares" class="ko-focus mt-3 flex items-center justify-between gap-3 border border-line bg-ink-850 px-4 py-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+      <span class="min-w-0">
+        <span class="block truncate font-display text-[15px] font-bold text-mist-50">Le palmarès complet</span>
+        <span class="block truncate text-[11px] text-mist-500">Tous les clubs, tous les joueurs et toutes les compétitions classés.</span>
+      </span>
+      <span class="shrink-0 text-[12px] font-medium text-acid-300">Voir la page →</span>
+    </a>
+  <% } %>
+</section>
+
+<!-- ===================== LIGUES ===================== -->
+<section class="mb-8">
+  <%- include("partials/section-head", {
+    title: 'Ligues en un coup d’œil',
+    meta: '<a href="/leagues" class="ko-focus text-[12px] font-medium text-mist-400 transition-colors duration-200 hover:text-acid-300">Toutes les compétitions →</a>'
+  }) %>
+  <% if (leagueList.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucune compétition', message: 'Les compétitions actives ne sont pas encore disponibles.', icon: 'trophy' }) %>
+  <% } else { %>
+    <div class="ko-rail -mx-3 px-3 md:mx-0 md:px-0">
+      <% leagueList.slice(0, 14).forEach(function (lg) { %>
+        <a href="/leagues/<%= lg.id %>" class="ko-focus flex w-[168px] flex-col items-start gap-2 rounded-panel border border-line bg-ink-850 p-3 transition-colors duration-200 hover:border-line-strong hover:bg-ink-800">
+          <%- include("partials/img", { id: lg.id, name: lg.name, kind: 'league', size: 'md' }) %>
+          <span class="w-full">
+            <span class="block truncate text-[12px] font-semibold text-mist-100"><%= lg.name %></span>
+            <span class="block truncate text-[10px] text-mist-500"><%= lg.country %><%= lg.isWomen ? ' · F' : '' %></span>
+          </span>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- ===================== DEMAIN + PRÉDICTIONS ===================== -->
+<section class="grid gap-6 lg:grid-cols-2">
+  <div>
+    <%- include("partials/section-head", { title: 'Demain' }) %>
+    <% if (tomorrowList.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Rien de programmé demain', message: 'Aucune rencontre annoncée pour le lendemain.', icon: 'calendar' }) %>
+    <% } else { %>
+      <ul class="border border-line bg-ink-900">
+        <% tomorrowList.slice(0, 8).forEach(function (ev) { %>
+          <%- include("partials/match-row", { event: ev }) %>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+
+  <div>
+    <%- include("partials/section-head", {
+      title: 'Dernières prédictions',
+      meta: '<a href="/predictions" class="ko-focus text-[12px] font-medium text-mist-400 transition-colors duration-200 hover:text-acid-300">Tout voir →</a>'
+    }) %>
+    <% if (preds.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Aucune prédiction', message: 'Le modèle n’a pas encore publié de prévision.', icon: 'sparkles' }) %>
+    <% } else { %>
+      <ul class="border border-line bg-ink-900">
+        <% preds.slice(0, 6).forEach(function (p) { %>
+          <li class="border-b border-line/80 px-3 py-3 last:border-b-0">
+            <a href="<%= p.eventId ? '/match/' + p.eventId : '/predictions' %>" class="ko-focus block">
+              <span class="flex items-center justify-between gap-3">
+                <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-mist-100"><%= p.homeTeam || '—' %> <span class="text-mist-500">vs</span> <%= p.awayTeam || '—' %></span>
+                <span class="ko-tabular shrink-0 font-display text-[15px] font-bold text-acid-300"><%= p.score || '—' %></span>
+              </span>
+              <span class="mt-2 flex h-1.5 overflow-hidden rounded-full bg-ink-700" aria-hidden="true">
+                <span class="bg-acid-500" style="width:<%= Math.round((p.homeProb || 0) * 100) %>%"></span>
+                <span class="bg-mist-500" style="width:<%= Math.round((p.drawProb || 0) * 100) %>%"></span>
+                <span class="bg-blood-500/80" style="width:<%= Math.round((p.awayProb || 0) * 100) %>%"></span>
+              </span>
+              <span class="mt-1.5 flex items-center justify-between gap-3 text-[10px] text-mist-500">
+                <span><%= p.leagueName || '' %></span>
+                <span class="ko-tabular"><%= p.topOutcome || '' %> · <%= fmt.percent(p.topProbability) %></span>
+              </span>
+            </a>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</section>

@@ -1,0 +1,52 @@
+<%
+  const navItems = (typeof nav !== 'undefined' && nav) ? nav : [];
+  const bottomIds = ['/', '/live', '/fixtures', '/leagues', '/recherche'];
+  const bottomNav = bottomIds.map(function (id) {
+    return navItems.filter(function (n) { return n.href === id; })[0];
+  }).filter(Boolean);
+  const bottomIcons = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/>',
+    radio: '<circle cx="12" cy="12" r="2.4"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6"/><path d="M15.8 15.8a5.4 5.4 0 0 0 0-7.6"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3M16 3.5v3"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.5v1A3.5 3.5 0 0 0 9 10"/><path d="M16 5.5h2.5v1A3.5 3.5 0 0 1 15 10"/><path d="M12 13v4"/><path d="M8.5 20h7l-.7-3h-5.6z"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>'
+  };
+%><!doctype html>
+<html lang="fr">
+<head>
+  <%- include("partials/head") %>
+</head>
+<body class="ko-grain min-h-screen bg-ink-900 font-sans text-mist-100 antialiased">
+  <a href="#main" class="ko-skip sr-only bg-acid-400 px-3 py-2 text-sm font-semibold text-ink-950">Aller au contenu principal</a>
+
+  <div class="relative z-10 flex min-h-screen flex-col">
+    <%- include("partials/header") %>
+
+    <main id="main" class="mx-auto w-full max-w-[1240px] flex-1 px-3 pt-4 pb-24 md:px-6 md:pt-6 md:pb-14">
+      <%- body %>
+    </main>
+
+    <%- include("partials/footer") %>
+  </div>
+
+  <!-- Barre de navigation basse (mobile) -->
+  <nav aria-label="Navigation rapide" class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink-900/96 backdrop-blur-md md:hidden" style="padding-bottom:env(safe-area-inset-bottom)">
+    <div class="mx-auto grid max-w-[520px] grid-cols-5">
+      <% bottomNav.forEach(function (item) { %>
+        <%
+          const active = item.href === '/' ? (currentPath || '/') === '/' : (currentPath || '').indexOf(item.href) === 0;
+          const p = bottomIcons[item.icon] || bottomIcons.home;
+        %>
+        <a href="<%= item.href %>"
+           aria-current="<%= active ? 'page' : 'false' %>"
+           class="ko-focus flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold tracking-wide transition-colors duration-200 <%= active ? 'text-acid-300' : 'text-mist-400' %>">
+          <svg viewBox="0 0 24 24" class="h-[22px] w-[22px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><%- p %></svg>
+          <span class="leading-none"><%= item.label %></span>
+        </a>
+      <% }); %>
+    </div>
+  </nav>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

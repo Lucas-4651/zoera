@@ -1,0 +1,103 @@
+<%
+  const predList = predictions || [];
+  const leagueList = leagues || [];
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Modèle',
+  title: 'Prédictions',
+  subtitle: 'Les pronostics du modèle : issues probables, score attendu et niveau de confiance.'
+}) %>
+
+<% if (leagueList.length > 1) { %>
+  <div class="mb-5 flex items-center gap-3">
+    <label for="pred-league" class="ko-eyebrow shrink-0 text-[11px] text-mist-500">Compétition</label>
+    <select id="pred-league" data-prediction-league class="ko-focus h-11 w-full max-w-xs rounded-[10px] border border-line bg-ink-850 px-3 text-[13px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+      <option value="">Toutes les compétitions</option>
+      <% leagueList.forEach(function (lg) { %>
+        <option value="<%= lg.id %>"><%= lg.name %></option>
+      <% }); %>
+    </select>
+  </div>
+<% } %>
+
+<% if (predList.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucune prédiction disponible', message: 'Le modèle n’a pas encore publié de prévision pour les prochaines rencontres.', icon: 'sparkles' }) %>
+<% } else { %>
+  <% /* État vide affiché côté client quand le filtre courant ne laisse
+       aucune carte visible (compétition sans aucune prédiction). */ %>
+  <div data-prediction-empty hidden>
+    <%- include("partials/empty-state", { title: 'Aucune prédiction pour cette compétition', message: 'Le modèle n’a publié aucune prévision pour les rencontres de cette compétition.', icon: 'sparkles' }) %>
+  </div>
+  <ul data-prediction-list class="grid gap-3 md:grid-cols-2">
+    <% predList.forEach(function (p) { %>
+      <%
+        const homeId = (typeof p.homeTeamId !== 'undefined' && p.homeTeamId !== null && p.homeTeamId !== undefined) ? p.homeTeamId : null;
+        const awayId = (typeof p.awayTeamId !== 'undefined' && p.awayTeamId !== null && p.awayTeamId !== undefined) ? p.awayTeamId : null;
+        const leagueId = (typeof p.leagueId !== 'undefined' && p.leagueId !== null && p.leagueId !== undefined) ? p.leagueId : null;
+        const homeName = p.homeTeam || '—';
+        const awayName = p.awayTeam || '—';
+      %>
+      <li data-prediction-item data-league-name="<%= p.leagueName || '' %>" class="border border-line bg-ink-900 p-4 transition-colors duration-200 hover:border-line-strong">
+        <!-- Compétition : logo + nom -->
+        <div class="flex items-center justify-center gap-2">
+          <% if (leagueId !== null) { %>
+            <%- include("partials/logo", { id: leagueId, name: p.leagueName || '', kind: 'league', size: 'xs' }) %>
+          <% } %>
+          <span class="truncate text-[11px] tracking-wide text-mist-500 uppercase"><%= p.leagueName || '' %></span>
+        </div>
+
+        <!-- Équipes : logos + noms, score attendu mis en avant -->
+        <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+          <div class="flex min-w-0 flex-col items-center gap-1.5 text-center">
+            <% if (homeId !== null) { %>
+              <%- include("partials/logo", { id: homeId, name: homeName, kind: 'team', size: 'sm' }) %>
+            <% } %>
+            <span class="line-clamp-2 font-display text-[13px] leading-tight font-bold text-mist-50"><%= homeName %></span>
+          </div>
+
+          <div class="flex shrink-0 flex-col items-center">
+            <span class="ko-tabular font-display text-[26px] leading-none font-bold text-acid-300"><%= p.score || '—' %></span>
+            <span class="mt-1 text-[9px] tracking-widest text-mist-500 uppercase">Score prévu</span>
+          </div>
+
+          <div class="flex min-w-0 flex-col items-center gap-1.5 text-center">
+            <% if (awayId !== null) { %>
+              <%- include("partials/logo", { id: awayId, name: awayName, kind: 'team', size: 'sm' }) %>
+            <% } %>
+            <span class="line-clamp-2 font-display text-[13px] leading-tight font-bold text-mist-50"><%= awayName %></span>
+          </div>
+        </div>
+
+        <div class="mt-3 flex h-2 overflow-hidden rounded-full bg-ink-700" role="img" aria-label="Probabilités 1X2">
+          <span class="bg-acid-500" style="width:<%= Math.round((p.homeProb || 0) * 100) %>%"></span>
+          <span class="bg-mist-500" style="width:<%= Math.round((p.drawProb || 0) * 100) %>%"></span>
+          <span class="bg-blood-500/80" style="width:<%= Math.round((p.awayProb || 0) * 100) %>%"></span>
+        </div>
+
+        <ul class="mt-3 grid grid-cols-3 gap-2 text-center">
+          <% [['1', p.homeProb], ['X', p.drawProb], ['2', p.awayProb]].forEach(function (k) { %>
+            <li class="rounded-[8px] border border-line bg-ink-850 px-2 py-1.5">
+              <span class="ko-tabular font-display text-[15px] font-bold text-mist-50"><%= fmt.percent(k[1]) %></span>
+              <span class="ml-1 text-[10px] text-mist-500"><%= k[0] %></span>
+            </li>
+          <% }); %>
+        </ul>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-[10px] text-mist-500">
+          <span>
+            <% if (p.topOutcome) { %><span class="font-semibold text-mist-200"><%= p.topOutcome %></span> · confiance <span class="ko-tabular text-acid-300"><%= fmt.percent(p.topProbability) %></span><% } %>
+            <% if (p.over25 !== null && p.over25 !== undefined) { %> · +2,5 <span class="ko-tabular"><%= fmt.percent(p.over25) %></span><% } %>
+          </span>
+          <span class="flex items-center gap-2">
+            <% if (p.date) { %><span class="ko-tabular"><%= fmt.date(p.date, { withTime: true }) %></span><% } %>
+            <% if (p.model) { %><span class="rounded-pill border border-line bg-ink-850 px-2 py-0.5"><%= p.model %></span><% } %>
+            <% if (p.eventId) { %>
+              <a href="/match/<%= p.eventId %>" class="ko-focus rounded-pill border border-acid-500/35 bg-acid-500/10 px-2.5 py-1 font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">Fiche match →</a>
+            <% } %>
+          </span>
+        </div>
+      </li>
+    <% }); %>
+  </ul>
+<% } %>

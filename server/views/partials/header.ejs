@@ -1,0 +1,116 @@
+<%
+  // Icônes SVG inline (aucune dépendance). `icon` vient de la nav du contrôleur.
+  const icons = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/>',
+    radio: '<circle cx="12" cy="12" r="2.4"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6"/><path d="M15.8 15.8a5.4 5.4 0 0 0 0-7.6"/><path d="M5.5 5.5a9.2 9.2 0 0 0 0 13"/><path d="M18.5 18.5a9.2 9.2 0 0 0 0-13"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3M16 3.5v3"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.5v1A3.5 3.5 0 0 0 9 10"/><path d="M16 5.5h2.5v1A3.5 3.5 0 0 1 15 10"/><path d="M12 13v4"/><path d="M8.5 20h7l-.7-3h-5.6z"/>',
+    sparkles: '<path d="M12 3.5 13.7 9l5.3 1.7-5.3 1.7L12 18l-1.7-5.6L5 10.7 10.3 9z"/><path d="M18.5 15.5l.7 2.1 2 .7-2 .7-.7 2.1-.7-2.1-2-.7 2-.7z"/>',
+    chart: '<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17V11"/><path d="M12.5 17V7"/><path d="M17 17v-4"/>',
+    swap: '<path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    star: '<path d="M12 3.6l2.6 5.5 5.9.8-4.3 4.2 1 6-5.2-2.9-5.2 2.9 1-6L3.5 9.9l5.9-.8z"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 6.5V5.5A1.5 1.5 0 0 0 13.5 4h-8A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15h1"/>'
+  };
+  const icon = (name, cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${icons[name] || icons.chart}</svg>`;
+  const isActive = (href) => {
+    const cp = currentPath || '/';
+    if (href === '/') return cp === '/';
+    return cp === href || cp.startsWith(href + '/') || cp.startsWith(href + '?');
+  };
+%>
+<header class="sticky top-0 z-40 border-b border-line bg-ink-900/92 backdrop-blur-md">
+  <div class="mx-auto flex w-full max-w-[1240px] items-center gap-3 px-3 py-2.5 md:px-6 md:py-3">
+
+    <!-- Logo : monogramme « Z frappé » + nom de marque -->
+    <a href="/" class="ko-focus group flex shrink-0 items-center gap-2" aria-label="Zoera — accueil">
+      <span class="grid h-8 w-8 place-items-center rounded-[9px] bg-acid-400 text-ink-950 transition-transform duration-200 group-hover:-rotate-6">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true" focusable="false">
+          <g transform="translate(1.2 1.2) scale(0.9)">
+            <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+            <circle cx="20.4" cy="3.6" r="2.7"/>
+          </g>
+        </svg>
+      </span>
+      <span class="font-display text-[19px] leading-none font-bold tracking-[0.02em] text-mist-50 md:text-[21px]">
+        ZO<span class="text-acid-400">ERA</span>
+      </span>
+    </a>
+
+    <!-- Recherche (desktop) -->
+    <form action="/recherche" method="get" role="search" class="ml-auto hidden min-w-0 flex-1 md:ml-4 md:block md:max-w-[340px]">
+      <label class="relative block">
+        <span class="sr-only">Rechercher une équipe, un joueur ou une ligue</span>
+        <svg viewBox="0 0 24 24" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-400" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        <input
+          type="search"
+          name="q"
+          data-search-input
+          value="<%= typeof query !== 'undefined' && query ? query : '' %>"
+          placeholder="Équipe, joueur, ligue…"
+          autocomplete="off"
+          class="h-10 w-full rounded-[10px] border border-line bg-ink-850 pl-9 pr-3 text-sm text-mist-100 placeholder:text-mist-500 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+      </label>
+    </form>
+
+    <!-- Actions droite -->
+    <div class="ml-auto flex items-center gap-2 md:ml-0">
+      <a href="/recherche" class="ko-focus grid h-10 w-10 place-items-center rounded-[10px] border border-line bg-ink-850 text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-acid-300 md:hidden" aria-label="Rechercher">
+        <%- icon('search', 'h-5 w-5') %>
+      </a>
+
+      <% if (demo) { %>
+        <span class="hidden items-center gap-1.5 rounded-pill border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-amber-400 sm:inline-flex" title="Données de démonstration (aucune clé API configurée)">
+          <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>MODE DÉMO
+        </span>
+      <% } %>
+
+      <% if (quota && quota.limit) { %>
+        <span class="hidden items-center gap-1.5 rounded-pill border border-line bg-ink-850 px-2.5 py-1 text-[11px] text-mist-300 lg:inline-flex" title="Quota API restant">
+          <span class="h-1.5 w-1.5 rounded-full bg-acid-400"></span>
+          <span class="ko-tabular"><%= fmt.number(quota.remaining) %></span>/<span class="ko-tabular"><%= fmt.number(quota.limit) %></span>
+        </span>
+      <% } %>
+
+      <button type="button" data-mobile-menu-toggle aria-expanded="false" aria-controls="mobile-menu" aria-label="Ouvrir le menu" class="ko-focus grid h-10 w-10 place-items-center rounded-[10px] border border-line bg-ink-850 text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-acid-300 lg:hidden">
+        <%- icon('menu', 'h-5 w-5') %>
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation desktop -->
+  <nav aria-label="Navigation principale" class="hidden border-t border-line lg:block">
+    <div class="mx-auto flex w-full max-w-[1240px] items-center gap-1 px-6 py-1.5">
+      <% nav.forEach(function (item) { %>
+        <a href="<%= item.href %>"
+           aria-current="<%= isActive(item.href) ? 'page' : 'false' %>"
+           class="ko-focus group flex items-center gap-2 rounded-[9px] px-3 py-2 text-[13px] font-medium transition-colors duration-200 <%= isActive(item.href) ? 'bg-ink-800 text-acid-300' : 'text-mist-300 hover:bg-ink-850 hover:text-mist-50' %>">
+          <span class="<%= isActive(item.href) ? 'text-acid-400' : 'text-mist-400 group-hover:text-mist-200' %>"><%- icon(item.icon, 'h-[18px] w-[18px]') %></span>
+          <%= item.label %>
+        </a>
+      <% }); %>
+    </div>
+  </nav>
+
+  <!-- Menu mobile (feuille) -->
+  <div id="mobile-menu" data-mobile-menu hidden class="border-t border-line bg-ink-850 lg:hidden">
+    <nav aria-label="Navigation mobile" class="mx-auto grid w-full max-w-[1240px] grid-cols-2 gap-1.5 px-3 py-3">
+      <% nav.forEach(function (item) { %>
+        <a href="<%= item.href %>"
+           aria-current="<%= isActive(item.href) ? 'page' : 'false' %>"
+           class="ko-focus flex min-h-[44px] items-center gap-2.5 rounded-[10px] border border-line bg-ink-900 px-3 text-sm font-medium transition-colors duration-200 <%= isActive(item.href) ? 'text-acid-300' : 'text-mist-200' %>">
+          <span class="<%= isActive(item.href) ? 'text-acid-400' : 'text-mist-400' %>"><%- icon(item.icon, 'h-[18px] w-[18px]') %></span>
+          <%= item.label %>
+        </a>
+      <% }); %>
+    </nav>
+    <div class="mx-auto w-full max-w-[1240px] px-3 pb-3">
+      <button type="button" data-pwa-install hidden
+              class="ko-focus min-h-[44px] w-full rounded-[10px] border border-acid-500/40 bg-acid-500/12 px-3 py-2.5 text-sm font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">
+        Installer l'application
+      </button>
+    </div>
+  </div>
+</header>

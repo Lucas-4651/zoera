@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 117 32" width="234" height="64" role="img" aria-label="Zoera — direction 01">
+  <title>Zoera 01 — lockup horizontal</title>
+  <!-- Symbole : Z frappé (brosse + ballon) -->
+  <g fill="#cdf542" transform="translate(2 2) scale(1.166667)">
+    <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+    <circle cx="20.4" cy="3.6" r="2.7"/>
+  </g>
+  <!-- Logotype : ZO clair + ERA acide -->
+  <g class="zoera-zo" fill="#f5f8fb" transform="translate(35.5 6) scale(1.428571)">
+    <path d="M0 0H9V2.5L3 11.5H9V14H0V11.5L6 2.5H0Z"/>
+    <path fill-rule="evenodd" d="M14.2 0H17.4A3.4 3.4 0 0 1 20.8 3.4V10.6A3.4 3.4 0 0 1 17.4 14H14.2A3.4 3.4 0 0 1 10.8 10.6V3.4A3.4 3.4 0 0 1 14.2 0ZM13.3 3.4A1.1 1.1 0 0 0 14.4 2.3H17.2A1.1 1.1 0 0 0 18.3 3.4V10.6A1.1 1.1 0 0 0 17.2 11.7H14.4A1.1 1.1 0 0 0 13.3 10.6Z"/>
+  </g>
+  <g class="zoera-era" fill="#cdf542" transform="translate(35.5 6) scale(1.428571)">
+    <path d="M22.6 0H31.2V2.5H25.2V5.6H29.8V8.1H25.2V11.5H31.2V14H22.6Z"/>
+    <path fill-rule="evenodd" d="M33 0H38.9A3.9 3.9 0 0 1 38.9 7.8H35.6V14H33ZM35.6 2.5H39A1.3 1.3 0 0 1 39 5.1H35.6Z"/>
+    <path d="M38.2 7.8H41L42.8 14H39.6Z"/>
+    <path fill-rule="evenodd" d="M44.6 14L49 0H51.2L55.6 14H52.7L51.8 10.4H48.4L47.5 14ZM48.9 7.8H51.3L50.1 2.9Z"/>
+  </g>
+</svg>

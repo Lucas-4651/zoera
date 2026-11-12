@@ -1,0 +1,38 @@
+<footer class="mt-10 border-t border-line bg-ink-950/60">
+  <div class="mx-auto w-full max-w-[1240px] px-3 py-8 md:px-6">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+      <div class="max-w-sm">
+        <div class="flex items-center gap-2">
+          <span class="grid h-7 w-7 place-items-center rounded-[8px] bg-acid-400 text-ink-950">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true" focusable="false">
+              <g transform="translate(1.2 1.2) scale(0.9)">
+                <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+                <circle cx="20.4" cy="3.6" r="2.7"/>
+              </g>
+            </svg>
+          </span>
+          <span class="font-display text-base font-bold tracking-wide text-mist-50">ZO<span class="text-acid-400">ERA</span></span>
+        </div>
+        <p class="mt-3 text-[13px] leading-relaxed text-mist-400">
+          Le foot pour les communautés malagasy : scores en direct, calendrier,
+          classements, statistiques xG et prédictions.
+          Données fournies par Bzzoiro Sports Data.
+        </p>
+      </div>
+
+      <nav aria-label="Pied de page" class="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
+        <% nav.forEach(function (item) { %>
+          <a href="<%= item.href %>" class="ko-focus flex min-h-[36px] items-center text-[13px] text-mist-300 transition-colors duration-200 hover:text-acid-300"><%= item.label %></a>
+        <% }); %>
+      </nav>
+    </div>
+
+    <div class="mt-8 flex flex-col gap-2 border-t border-line pt-4 text-[11px] text-mist-500 sm:flex-row sm:items-center sm:justify-between">
+      <p>© <%= new Date().getFullYear() %> Zoera — statistiques fournies par l'API BSD.</p>
+      <p class="flex items-center gap-2">
+        <span class="h-1.5 w-1.5 rounded-full bg-acid-600"></span>
+        Aucune donnée personnelle collectée
+      </p>
+    </div>
+  </div>
+</footer>

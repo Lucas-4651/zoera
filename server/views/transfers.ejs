@@ -1,0 +1,71 @@
+<%
+  const transferList = transfers || [];
+  const leagueList = leagues || [];
+%>
+
+<%- include("partials/page-head", {
+  eyebrow: 'Mercato',
+  title: 'Transferts',
+  subtitle: 'Les derniers mouvements du mercato, du plus récent au plus ancien.'
+}) %>
+
+<% if (leagueList.length > 1) { %>
+  <div class="mb-5 flex items-center gap-3">
+    <label for="transfer-league" class="ko-eyebrow shrink-0 text-[11px] text-mist-500">Compétition</label>
+    <select id="transfer-league" data-transfer-league class="ko-focus h-11 w-full max-w-xs rounded-[10px] border border-line bg-ink-850 px-3 text-[13px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+      <option value="">Toutes les compétitions</option>
+      <% leagueList.forEach(function (lg) { %>
+        <option value="<%= lg.id %>"><%= lg.name %></option>
+      <% }); %>
+    </select>
+  </div>
+<% } %>
+
+<% if (transferList.length === 0) { %>
+  <%- include("partials/empty-state", { title: 'Aucun transfert', message: 'Aucun mouvement n’a été enregistré pour le moment.', icon: 'swap' }) %>
+<% } else { %>
+  <ul class="border border-line bg-ink-900">
+    <% transferList.forEach(function (t) { %>
+      <li class="flex flex-col gap-2 border-b border-line/80 px-3 py-3 last:border-b-0 transition-colors duration-200 hover:bg-ink-850 sm:flex-row sm:items-center sm:gap-4">
+        <span class="ko-tabular w-24 shrink-0 text-[11px] text-mist-500"><%= t.date ? fmt.date(t.date) : '—' %></span>
+
+        <span class="flex min-w-0 flex-1 items-center gap-2.5">
+          <% if (t.playerId) { %>
+            <%- include("partials/logo", { id: t.playerId, name: t.playerName || '', kind: 'player', size: 'sm', round: true }) %>
+          <% } %>
+          <span class="min-w-0">
+            <span class="flex flex-wrap items-center gap-1.5 text-[13px]">
+              <% if (t.playerId) { %>
+                <a href="/players/<%= t.playerId %>" class="break-words font-semibold text-mist-50 transition-colors duration-200 hover:text-acid-300 sm:truncate"><%= t.playerName || 'Joueur' %></a>
+              <% } else { %>
+                <span class="break-words font-semibold text-mist-50 sm:truncate"><%= t.playerName || 'Joueur' %></span>
+              <% } %>
+            </span>
+            <span class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-mist-500">
+              <% if (t.fromTeamId) { %>
+                <%- include("partials/logo", { id: t.fromTeamId, name: t.fromTeamName || '', kind: 'team', size: 'xs' }) %>
+                <a href="/teams/<%= t.fromTeamId %>" class="max-w-full break-words transition-colors duration-200 hover:text-mist-100 sm:max-w-[110px] sm:truncate"><%= t.fromTeamName %></a>
+              <% } else { %>
+                <span class="max-w-full break-words sm:max-w-[110px] sm:truncate"><%= t.fromTeamName %></span>
+              <% } %>
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h13"/><path d="M14 8l4 4-4 4"/></svg>
+              <% if (t.toTeamId) { %>
+                <%- include("partials/logo", { id: t.toTeamId, name: t.toTeamName || '', kind: 'team', size: 'xs' }) %>
+                <a href="/teams/<%= t.toTeamId %>" class="max-w-full break-words transition-colors duration-200 hover:text-mist-100 sm:max-w-[110px] sm:truncate"><%= t.toTeamName %></a>
+              <% } else { %>
+                <span class="max-w-full break-words sm:max-w-[110px] sm:truncate"><%= t.toTeamName %></span>
+              <% } %>
+            </span>
+          </span>
+        </span>
+
+        <span class="shrink-0 text-right">
+          <span class="ko-tabular block font-display text-[16px] font-bold <%= t.feeEur ? 'text-acid-300' : 'text-mist-400' %>"><%= fmt.eur(t.feeEur) %></span>
+          <% if (t.feeDescription && t.feeDescription !== fmt.eur(t.feeEur)) { %>
+            <span class="block text-[10px] text-mist-500"><%= t.feeDescription %></span>
+          <% } %>
+        </span>
+      </li>
+    <% }); %>
+  </ul>
+<% } %>

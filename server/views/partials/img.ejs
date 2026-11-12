@@ -1,0 +1,73 @@
+<%
+  /* Partial générique d'images — Image API BSD (gratuite, sans authentification).
+     https://sports.bzzoiro.com/img/{team|league|player|venue|manager}/{id}/
+
+     Paramètres
+       kind  : team | league | player | venue | manager
+       id    : identifiant BSD (null ⇒ repli initiales seul)
+       name  : libellé — sert aux initiales et à la teinte stable du repli
+       size  : xs | sm | md | lg | xl | 2xl (défaut : md)
+       alt   : texte alternatif ; vide (défaut) = image décorative (le nom reste lisible à côté)
+       class : classes utilitaires additionnelles sur le conteneur
+       round : pastille circulaire (photos de joueurs)
+       fit   : contain (défaut) | cover (photos)
+       src   : URL déjà calculée par le view model (prioritaire sur l'URL construite)
+
+     Aucun appel ne produit d'image cassée : si l'image manque (204), le repli
+     dégradé + initiales reste affiché et le <img> est retiré (onerror). */
+  const imKind = (typeof kind !== 'undefined' && kind) ? String(kind) : 'team';
+  const imName = (typeof name !== 'undefined' && name) ? String(name) : '';
+  const imId = (typeof id !== 'undefined' && id !== null && id !== undefined && id !== '') ? id : null;
+  const imSizeKey = (typeof size !== 'undefined' && size) ? String(size) : 'md';
+  const imAlt = (typeof alt !== 'undefined' && alt !== null) ? String(alt) : '';
+  /* « class » est un mot réservé en JS : on lit la clé via locals. */
+  const imClass = (typeof locals !== 'undefined' && locals && typeof locals['class'] === 'string') ? locals['class'] : '';
+  const imRound = !!(typeof round !== 'undefined' && round);
+  const imFit = (typeof fit !== 'undefined' && fit) ? String(fit) : 'contain';
+  const imGivenSrc = (typeof src !== 'undefined' && src) ? String(src) : '';
+
+  /* Gabarit de taille : boîte fixe (aucune secousse de mise en page). */
+  const IM_SIZE = {
+    xs:    { box: 'h-[18px] w-[18px]', px: 18, text: 'text-[8px]' },
+    sm:    { box: 'h-6 w-6',           px: 24, text: 'text-[10px]' },
+    md:    { box: 'h-8 w-8',           px: 32, text: 'text-[12px]' },
+    lg:    { box: 'h-11 w-11',         px: 44, text: 'text-[15px]' },
+    xl:    { box: 'h-16 w-16',         px: 64, text: 'text-[22px]' },
+    '2xl': { box: 'h-24 w-24',         px: 96, text: 'text-[30px]' }
+  };
+  const imSize = IM_SIZE[imSizeKey] || IM_SIZE.md;
+
+  /* URL : celle du view model si elle existe, sinon reconstruction depuis kind+id. */
+  let imSrc = imGivenSrc;
+  if (!imSrc && imId !== null) {
+    const kindPath = (imKind === 'team' || imKind === 'league' || imKind === 'player'
+                   || imKind === 'venue' || imKind === 'manager') ? imKind : 'team';
+    imSrc = 'https://sports.bzzoiro.com/img/' + kindPath + '/' + imId + '/'
+          + (kindPath === 'player' ? '?sor=true' : '');
+  }
+
+  /* Initiales + teinte stable dérivée du nom (même club, toujours la même couleur). */
+  const imInitials = (typeof fmt !== 'undefined' && fmt && typeof fmt.initials === 'function')
+    ? fmt.initials(imName)
+    : (imName ? imName.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('') : '—');
+  const imHue = imName.split('').reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 360, 7);
+
+  const imRadius = imRound ? 'rounded-full'
+    : imSizeKey === 'xs' ? 'rounded-[5px]'
+    : imSizeKey === 'sm' ? 'rounded-[6px]'
+    : imSizeKey === 'md' ? 'rounded-[8px]'
+    : imSizeKey === 'lg' ? 'rounded-[10px]'
+    : imSizeKey === 'xl' ? 'rounded-[14px]'
+    : 'rounded-[16px]';
+%>
+<span class="ko-logo <%= imSize.box %> <%= imRadius %> <%= imClass %>" style="--ko-hue:<%= imHue %>;" title="<%= imName %>">
+  <span aria-hidden="true"
+        class="absolute inset-0 grid place-items-center font-display font-bold leading-none text-mist-200 <%= imSize.text %>"
+        style="background-image:linear-gradient(140deg,hsl(<%= imHue %> 40% 22%),hsl(<%= imHue %> 36% 11%));"><%= imInitials %></span>
+  <% if (imSrc) { %>
+    <img src="<%= imSrc %>" alt="<%= imAlt %>" loading="lazy" decoding="async"
+         width="<%= imSize.px %>" height="<%= imSize.px %>"
+         class="ko-logo__img <%= imFit === 'cover' ? 'object-cover' : 'object-contain' %>"
+         onerror="this.remove()">
+  <% } %>
+</span>

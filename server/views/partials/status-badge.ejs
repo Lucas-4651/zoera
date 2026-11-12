@@ -1,0 +1,36 @@
+<%
+  /* Pastille de statut : live + minute, ou libellé FR (cf. §5 du contrat).
+     API publique inchangée : status / minute / period. */
+  const st = fmt.status((typeof status !== 'undefined' && status) ? status : 'unknown');
+  const toneClasses = {
+    live: 'border-acid-500/45 bg-acid-500/12 text-acid-300',
+    done: 'border-line-strong bg-ink-800 text-mist-300',
+    upcoming: 'border-line-strong bg-ink-800 text-mist-200',
+    alert: 'border-blood-500/45 bg-blood-500/12 text-blood-300',
+    muted: 'border-line bg-ink-850 text-mist-400'
+  };
+  const badgeCls = toneClasses[st.tone] || toneClasses.muted;
+  const dotClasses = {
+    live: 'bg-acid-400',
+    done: 'bg-mist-400',
+    upcoming: 'bg-mist-500',
+    alert: 'bg-blood-400',
+    muted: 'bg-mist-600'
+  };
+  const dotCls = dotClasses[st.tone] || dotClasses.muted;
+  const minuteValue = (typeof minute !== 'undefined' && minute !== null && minute !== undefined) ? minute : null;
+  const periodValue = (typeof period !== 'undefined' && period) ? period : null;
+%>
+<span class="inline-flex items-center gap-1.5 rounded-pill border px-2 py-[3px] text-[11px] font-semibold leading-none <%= badgeCls %>">
+  <% if (st.live) { %>
+    <span class="ko-live-dot shrink-0" aria-hidden="true"></span>
+    <span class="ko-tabular" data-live-minute><%= minuteValue !== null ? minuteValue + "'" : '' %></span>
+    <span class="sr-only">minute</span>
+  <% } else { %>
+    <span class="h-1.5 w-1.5 shrink-0 rounded-full <%= dotCls %>" aria-hidden="true"></span>
+    <span data-live-status><%= st.label %></span>
+  <% } %>
+  <% if (periodValue && !st.live) { %>
+    <span class="sr-only"><%= fmt.period(periodValue) %></span>
+  <% } %>
+</span>

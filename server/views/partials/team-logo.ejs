@@ -1,0 +1,11 @@
+<%
+  /* Alias mince : les anciens appels include("partials/team-logo") restent
+     valides et sont servis par le partial unifié "img" (kind = team). */
+%>
+<%- include("img", {
+      id: (typeof id !== 'undefined' ? id : null),
+      name: (typeof name !== 'undefined' ? name : ''),
+      kind: 'team',
+      size: (typeof size !== 'undefined' && size ? size : 'md'),
+      round: (typeof round !== 'undefined' ? !!round : false)
+    }) %>

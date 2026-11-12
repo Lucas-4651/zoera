@@ -1,0 +1,239 @@
+<%
+  const tm = team;
+  const squadList = squad || [];
+  const teamEvents = events || [];
+  const teamTransfers = transfers || [];
+  const teamForm = form || null;
+
+  const posGroups = [
+    { key: 'G', label: 'Gardiens' },
+    { key: 'D', label: 'Défenseurs' },
+    { key: 'M', label: 'Milieux' },
+    { key: 'F', label: 'Attaquants' }
+  ];
+  const grouped = posGroups.map(function (g) {
+    return {
+      label: g.label,
+      players: squadList.filter(function (p) { return (p.position || '').charAt(0).toUpperCase() === g.key; })
+    };
+  }).filter(function (g) { return g.players.length > 0; });
+
+  const played = teamEvents.filter(function (ev) { return ev.status === 'finished'; })
+    .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  const lastFive = played.slice(0, 5);
+  const upcoming = teamEvents.filter(function (ev) { return ev.status !== 'finished'; })
+    .sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+
+  const availLabel = function (p) {
+    const a = (p.availability || '').toLowerCase();
+    if (a.indexOf('injured') !== -1 || a.indexOf('out') !== -1) return { text: p.injuryType || 'Blessé', cls: 'border-blood-500/40 bg-blood-500/10 text-blood-300' };
+    if (a.indexOf('suspend') !== -1 || a.indexOf('red') !== -1) return { text: 'Suspendu', cls: 'border-amber-400/40 bg-amber-400/10 text-amber-400' };
+    if (a.indexOf('doubt') !== -1 || a.indexOf('question') !== -1) return { text: 'Doute', cls: 'border-amber-400/30 bg-amber-400/10 text-amber-400' };
+    if (a.indexOf('available') !== -1 || a === '') return { text: 'Disponible', cls: 'border-acid-500/30 bg-acid-500/10 text-acid-300' };
+    return { text: p.availability, cls: 'border-line bg-ink-800 text-mist-400' };
+  };
+
+  /* Drapeau : décoratif (aria-hidden), le nom du pays reste en texte. */
+  const flagOf = function (code) {
+    try {
+      if (!code || typeof fmt.flag !== 'function') return '';
+      return fmt.flag(code);
+    } catch (e) {
+      return '';
+    }
+  };
+  const teamFlag = flagOf(tm.countryCode);
+
+  /* Pastille de résultat : fond coloré + lettre discrète, sens porté par aria-label. */
+  const resultDot = function (res) {
+    if (res === 'V') return { letter: 'V', label: 'victoire', cls: 'bg-acid-500 text-ink-950' };
+    if (res === 'N') return { letter: 'N', label: 'nul', cls: 'bg-ink-600 text-mist-200' };
+    return { letter: 'D', label: 'défaite', cls: 'bg-blood-500 text-blood-950' };
+  };
+%>
+
+<!-- En-tête club : fiche d'entité, le logo reste à gauche du nom (titre non centré) -->
+<section class="relative mb-6 overflow-hidden border border-line bg-ink-850">
+  <div class="pointer-events-none absolute inset-0" aria-hidden="true"
+       style="background-image:radial-gradient(70% 120% at 15% -20%,rgba(205,245,66,.08),transparent 60%);"></div>
+  <div class="relative flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center md:px-7 md:py-7">
+    <%- include("partials/img", { id: tm.id, name: tm.name, kind: 'team', size: 'xl' }) %>
+    <div class="min-w-0 flex-1">
+      <p class="ko-eyebrow flex items-center gap-1 text-[11px] text-acid-400">
+        <% if (teamFlag) { %><span aria-hidden="true"><%= teamFlag %></span><% } %>
+        <span><%= tm.country || '' %></span>
+      </p>
+      <h1 class="mt-1 font-display text-[28px] leading-none font-bold tracking-tight text-mist-50 md:text-[38px]"><%= tm.name %></h1>
+      <% if (tm.shortName) { %><p class="mt-1.5 text-[12px] text-mist-400"><%= tm.shortName %></p><% } %>
+    </div>
+    <div class="flex shrink-0 flex-wrap items-center gap-2">
+      <% if (lastFive.length) { %>
+        <div class="flex items-center gap-1 rounded-[10px] border border-line bg-ink-900 px-2.5 py-2" title="5 derniers résultats">
+          <span class="text-[10px] tracking-wide text-mist-500 uppercase">Forme</span>
+          <% lastFive.forEach(function (ev) { %>
+            <% const hs = ev.homeScore || 0; const asScore = ev.awayScore || 0; const isHome = ev.homeTeamId === tm.id; const gf = isHome ? hs : asScore; const ga = isHome ? asScore : hs; const dot = resultDot(gf > ga ? 'V' : (gf === ga ? 'N' : 'D')); %>
+            <span role="img" aria-label="<%= dot.label %>" title="<%= ev.homeTeam %> <%= ev.homeScore %>–<%= ev.awayScore %> <%= ev.awayTeam %>"
+                  class="grid h-6 w-6 place-items-center rounded-[6px] text-[10px] font-bold <%= dot.cls %>"><span aria-hidden="true"><%= dot.letter %></span></span>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<div class="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+  <!-- Effectif -->
+  <section>
+    <%- include("partials/section-head", {
+      title: 'Effectif',
+      meta: '<span class="ko-tabular">' + squadList.length + ' joueurs</span>'
+    }) %>
+    <% if (squadList.length === 0) { %>
+      <%- include("partials/empty-state", { title: 'Effectif indisponible', message: 'La liste des joueurs n’est pas encore publiée.', icon: 'trophy' }) %>
+    <% } else { %>
+      <div class="flex flex-col gap-5">
+        <% grouped.forEach(function (group) { %>
+          <div>
+            <p class="ko-eyebrow mb-2 text-[11px] text-mist-500"><%= group.label %></p>
+            <ul class="border border-line bg-ink-900">
+              <% group.players.forEach(function (p) { %>
+                <% const av = availLabel(p); %>
+                <li class="flex items-center gap-2.5 border-b border-line/80 px-3 py-2.5 last:border-b-0 sm:gap-3">
+                  <a href="/players/<%= p.id %>" class="shrink-0">
+                    <%- include("partials/img", { id: p.id, name: p.name, kind: 'player', size: 'xs', round: true, fit: 'cover' }) %>
+                  </a>
+                  <span class="ko-tabular w-6 shrink-0 text-right font-display text-[15px] font-bold text-mist-400"><%= p.jerseyNumber === null || p.jerseyNumber === undefined ? '—' : p.jerseyNumber %></span>
+                  <a href="/players/<%= p.id %>" class="min-w-0 flex-1">
+                    <span class="block truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= p.name %></span>
+                    <span class="block truncate text-[11px] text-mist-500"><%= p.position %> · <%= p.nationality || '—' %></span>
+                  </a>
+                  <span class="shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium <%= av.cls %>"><%= av.text %></span>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </section>
+
+  <div class="flex flex-col gap-8">
+    <!-- Forme détaillée -->
+    <section>
+      <%- include("partials/section-head", {
+        title: 'Forme',
+        meta: (teamForm && teamForm.matches) ? '<span class="ko-tabular">' + teamForm.matches + ' matchs</span>' : ''
+      }) %>
+      <% if (!teamForm || !teamForm.overall) { %>
+        <%- include("partials/empty-state", { title: 'Données de forme indisponibles', message: 'Les statistiques des derniers matchs ne sont pas encore calculées.', icon: 'chart' }) %>
+      <% } else { %>
+        <div class="border border-line bg-ink-900 p-4">
+          <% const results = (teamForm.overall.results || '').toUpperCase(); %>
+          <% if (results) { %>
+            <p class="text-[11px] text-mist-500">Sur les <%= teamForm.matches || teamForm.requested || 0 %> derniers matchs</p>
+            <div class="mt-3 flex flex-wrap items-center gap-1.5" role="list" aria-label="Résultats récents">
+              <% results.split('').forEach(function (ch) { %>
+                <% const dot = resultDot(ch === 'W' ? 'V' : (ch === 'D' ? 'N' : (ch === 'L' ? 'D' : ''))); %>
+                <% if (!dot.letter) { return; } %>
+                <span role="img" aria-label="<%= dot.label %>" title="<%= dot.label %>"
+                      class="grid h-7 w-7 place-items-center rounded-[7px] text-[11px] font-bold <%= dot.cls %>"><span aria-hidden="true"><%= dot.letter %></span></span>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p class="text-[11px] text-mist-500">Sur les <%= teamForm.matches || teamForm.requested || 0 %> derniers matchs</p>
+          <% } %>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <% [['Victoires', teamForm.overall.wins, 'text-acid-300'], ['Nuls', teamForm.overall.draws, 'text-mist-100'], ['Défaites', teamForm.overall.losses, 'text-blood-300']].forEach(function (k) { %>
+              <div class="rounded-[10px] border border-line bg-ink-850 px-2 py-3">
+                <p class="ko-tabular font-display text-[22px] font-bold <%= k[2] %>"><%= k[1] === null || k[1] === undefined ? '—' : k[1] %></p>
+                <p class="mt-0.5 text-[10px] tracking-wide text-mist-500 uppercase"><%= k[0] %></p>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+    </section>
+
+    <!-- Statistiques -->
+    <section>
+      <%- include("partials/section-head", { title: 'Statistiques' }) %>
+      <% if (!teamForm || !teamForm.overall) { %>
+        <%- include("partials/empty-state", { title: 'Statistiques indisponibles', message: 'Les chiffres de la saison ne sont pas encore calculés.', icon: 'chart' }) %>
+      <% } else { %>
+        <dl class="border border-line bg-ink-900 px-4 py-3 text-[12px]">
+          <div class="flex items-center justify-between border-b border-line/70 py-2">
+            <dt class="text-mist-400">Buts marqués / encaissés</dt>
+            <dd class="ko-tabular text-mist-100"><%= teamForm.overall.goalsFor === null || teamForm.overall.goalsFor === undefined ? '—' : teamForm.overall.goalsFor %> / <%= teamForm.overall.goalsAgainst === null || teamForm.overall.goalsAgainst === undefined ? '—' : teamForm.overall.goalsAgainst %></dd>
+          </div>
+          <div class="flex items-center justify-between border-b border-line/70 py-2">
+            <dt class="text-mist-400">Points par match</dt>
+            <dd class="ko-tabular text-mist-100"><%= teamForm.overall.pointsPerMatch === null || teamForm.overall.pointsPerMatch === undefined ? '—' : Number(teamForm.overall.pointsPerMatch).toFixed(2) %></dd>
+          </div>
+          <div class="flex items-center justify-between py-2">
+            <dt class="text-mist-400">À domicile</dt>
+            <dd class="ko-tabular text-mist-100"><%= teamForm.home ? (teamForm.home.pointsPerMatch === null || teamForm.home.pointsPerMatch === undefined ? '—' : Number(teamForm.home.pointsPerMatch).toFixed(2)) : '—' %> pts/match</dd>
+          </div>
+        </dl>
+      <% } %>
+    </section>
+
+    <!-- Transferts -->
+    <section>
+      <%- include("partials/section-head", { title: 'Transferts' }) %>
+      <% if (teamTransfers.length === 0) { %>
+        <%- include("partials/empty-state", { title: 'Aucun transfert', message: 'Aucun mouvement enregistré pour ce club.', icon: 'swap' }) %>
+      <% } else { %>
+        <ul class="border border-line bg-ink-900">
+          <% teamTransfers.slice(0, 8).forEach(function (t) { %>
+            <% const tPlayerId = (t.playerId === null || t.playerId === undefined) ? null : t.playerId; %>
+            <li class="flex items-center gap-2.5 border-b border-line/80 px-3 py-2.5 last:border-b-0 sm:gap-3">
+              <%- include("partials/img", { id: tPlayerId, name: t.playerName || 'Joueur', kind: 'player', size: 'xs', round: true, fit: 'cover' }) %>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <% if (tPlayerId) { %>
+                    <a href="/players/<%= tPlayerId %>" class="min-w-0 truncate text-[13px] font-medium text-mist-100 transition-colors duration-200 hover:text-acid-300"><%= t.playerName || 'Joueur' %></a>
+                  <% } else { %>
+                    <span class="min-w-0 truncate text-[13px] font-medium text-mist-100"><%= t.playerName || 'Joueur' %></span>
+                  <% } %>
+                  <span class="ko-tabular shrink-0 text-[12px] font-semibold <%= t.feeEur ? 'text-acid-300' : 'text-mist-400' %>"><%= fmt.eur(t.feeEur) %></span>
+                </div>
+                <p class="mt-1 flex items-center gap-1.5 truncate text-[11px] text-mist-500">
+                  <span class="truncate"><%= t.fromTeamName %></span>
+                  <svg viewBox="0 0 24 24" class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h13"/><path d="M14 8l4 4-4 4"/></svg>
+                  <span class="truncate"><%= t.toTeamName %></span>
+                </p>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+</div>
+
+<!-- Calendrier du club -->
+<section class="mt-8">
+  <%- include("partials/section-head", {
+    title: 'Calendrier',
+    sub: 'Prochaines rencontres du club',
+    meta: upcoming.length > 0 ? '<span class="ko-tabular">' + upcoming.length + ' à venir</span>' : ''
+  }) %>
+  <% if (upcoming.length === 0) { %>
+    <%- include("partials/empty-state", { title: 'Aucune rencontre à venir', message: 'Aucune date n’est programmée pour ce club.', icon: 'calendar' }) %>
+  <% } else { %>
+    <ul class="border border-line bg-ink-900">
+      <% upcoming.slice(0, 10).forEach(function (ev) { %>
+        <%- include("partials/match-row", { event: ev }) %>
+      <% }); %>
+    </ul>
+  <% } %>
+
+  <% if (played.length) { %>
+    <h3 class="ko-eyebrow mb-2 mt-6 text-[11px] text-mist-500">Derniers résultats</h3>
+    <ul class="border border-line bg-ink-900">
+      <% played.slice(0, 6).forEach(function (ev) { %>
+        <%- include("partials/match-row", { event: ev }) %>
+      <% }); %>
+    </ul>
+  <% } %>
+</section>

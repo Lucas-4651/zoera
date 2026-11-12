@@ -1,0 +1,94 @@
+<%
+  /* Ligne de match — hiérarchie : SCORE > statut live > équipes > heure/compétition.
+     Réutilisée sur l'accueil, le direct, le calendrier, les fiches club et joueur. */
+  const ev = event;
+  const live = !!ev.isLive;
+  const hasScore = ev.homeScore !== null && ev.awayScore !== null && ev.homeScore !== undefined && ev.awayScore !== undefined;
+  const showScore = hasScore || live;
+  const scoreValue = showScore ? ((ev.homeScore || 0) + ' – ' + (ev.awayScore || 0)) : '';
+  const compName = ev.leagueName || '';
+  const kickoff = ev.date ? fmt.time(ev.date) : '';
+  const hT = (ev.homeScoreHt !== null && ev.homeScoreHt !== undefined) ? ev.homeScoreHt : null;
+  const aT = (ev.awayScoreHt !== null && ev.awayScoreHt !== undefined) ? ev.awayScoreHt : null;
+  const et = ev.extraTime || null;
+  const pen = ev.penaltyShootout || null;
+
+  let subLine = '';
+  if (pen) subLine = 'Séparations ' + pen.home + '–' + pen.away;
+  else if (et) subLine = 'Prolongations ' + et.home + '–' + et.away;
+  else if (live && ev.period) subLine = fmt.period(ev.period);
+  else if (hT !== null && aT !== null) subLine = 'Mi-temps ' + hT + '–' + aT;
+%>
+<li class="ko-match group relative border-b border-line/80 bg-ink-900 transition-colors duration-200 last:border-b-0 hover:bg-ink-850"
+    data-live-match
+    data-event-id="<%= ev.id %>"
+    data-league-id="<%= ev.leagueId %>"
+    data-status="<%= ev.status %>"
+    data-minute="<%= ev.minute === null || ev.minute === undefined ? '' : ev.minute %>"
+    data-home-score="<%= ev.homeScore === null || ev.homeScore === undefined ? '' : ev.homeScore %>"
+    data-away-score="<%= ev.awayScore === null || ev.awayScore === undefined ? '' : ev.awayScore %>">
+
+  <a href="/match/<%= ev.id %>" class="group grid grid-cols-[34px_minmax(0,1fr)_34px] grid-rows-[auto_auto] items-center gap-x-2 gap-y-2.5 px-3 py-3 md:grid-cols-[176px_minmax(0,1fr)_176px_minmax(0,1fr)_34px] md:grid-rows-[auto] md:gap-x-4 md:px-4">
+
+    <!-- Bloc meta : statut + heure + compétition -->
+    <div class="col-span-3 row-start-1 flex items-center justify-between gap-3 md:col-span-1 md:row-start-1 md:flex-col md:items-start md:justify-start md:gap-1">
+      <div class="flex items-center gap-2">
+        <%- include("status-badge", { status: ev.status, minute: ev.minute, period: ev.period }) %>
+        <% if (kickoff && showScore) { %>
+          <% /* L'heure n'est répétée que sur desktop : sans score, elle est
+               déjà au centre de la ligne (case « score »). */ %>
+          <span class="ko-tabular hidden text-[12px] text-mist-500 md:inline"><%= kickoff %></span>
+        <% } %>
+      </div>
+      <span class="flex min-w-0 items-center gap-1.5">
+        <% if (ev.leagueId) { %>
+          <span class="hidden shrink-0 sm:inline-flex"><%- include("logo", { id: ev.leagueId, name: compName, kind: 'league', size: 'xs' }) %></span>
+
+        <% } %>
+        <span class="truncate text-[11px] text-mist-500 md:max-w-full"><%= compName %></span>
+      </span>
+    </div>
+
+    <!-- BLOC MATCH : sur mobile, les deux écussons encadrent le score et les
+         noms passent en ligne secondaire (sous chaque écusson). Sur desktop,
+         `md:contents` dissout ce conteneur : ses enfants deviennent
+         directement les cellules de la grille dense d'origine. -->
+    <div class="col-start-2 row-start-2 flex items-center justify-center gap-3 md:contents">
+
+      <!-- Équipe domicile : mobile = écusson au-dessus du nom (flex-col-reverse) -->
+      <div class="flex min-w-0 flex-col-reverse items-center gap-1.5 md:flex-row md:justify-end md:gap-2">
+        <span class="line-clamp-2 max-w-[86px] text-center text-[11px] leading-[1.15] font-medium text-mist-300 md:max-w-none md:truncate md:text-right md:text-[14px] md:text-mist-100"><%= ev.homeTeam %></span>
+        <%- include("img", { id: ev.homeTeamId, name: ev.homeTeam, kind: 'team', size: 'md' }) %>
+      </div>
+
+      <!-- SCORE (élément le plus fort) -->
+      <div class="flex flex-col items-center justify-center px-0.5 text-center">
+        <% if (showScore) { %>
+          <span class="ko-tabular font-display text-[27px] leading-none font-bold tracking-tight text-mist-50 md:text-[32px] <%= live ? 'text-acid-300' : '' %>"
+                data-live-score><%= scoreValue %></span>
+        <% } else { %>
+          <span class="ko-tabular font-display text-[19px] leading-none font-bold tracking-tight text-mist-200 md:text-[22px]"><%= kickoff %></span>
+        <% } %>
+        <% if (subLine) { %>
+          <span class="mt-1 text-[10px] leading-none font-medium tracking-wide text-mist-500 uppercase"><%= subLine %></span>
+        <% } %>
+      </div>
+
+      <!-- Équipe extérieur -->
+      <div class="flex min-w-0 flex-col items-center gap-1.5 md:flex-row md:justify-start md:gap-2">
+        <%- include("img", { id: ev.awayTeamId, name: ev.awayTeam, kind: 'team', size: 'md' }) %>
+        <span class="line-clamp-2 max-w-[86px] text-center text-[11px] leading-[1.15] font-medium text-mist-300 md:max-w-none md:truncate md:text-left md:text-[14px] md:text-mist-100"><%= ev.awayTeam %></span>
+      </div>
+
+    </div>
+
+    <!-- Favori -->
+    <div class="col-start-3 row-start-2 flex justify-end md:col-start-5 md:row-start-1">
+      <button type="button" data-fav="match:<%= ev.id %>" aria-pressed="false"
+              aria-label="Ajouter ce match aux favoris"
+              class="ko-focus grid h-9 w-9 place-items-center rounded-[9px] text-mist-500 transition-colors duration-200 hover:bg-ink-750 hover:text-acid-300">
+        <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6l2.6 5.5 5.9.8-4.3 4.2 1 6-5.2-2.9-5.2 2.9 1-6L3.5 9.9l5.9-.8z"/></svg>
+      </button>
+    </div>
+  </a>
+</li>

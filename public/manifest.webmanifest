@@ -1,0 +1,24 @@
+{
+  "name": "Zoera — football en direct",
+  "short_name": "Zoera",
+  "description": "Scores en direct, calendrier, classements, statistiques xG et prédictions — le foot pour les communautés malagasy.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0d12",
+  "theme_color": "#0a0d12",
+  "categories": ["sports", "news"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "En direct", "short_name": "Direct", "url": "/live" },
+    { "name": "Calendrier", "short_name": "Calendrier", "url": "/fixtures" },
+    { "name": "Classements", "short_name": "Ligues", "url": "/leagues" }
+  ]
+}

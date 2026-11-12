@@ -1,0 +1,29 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<%
+  /* Le nom de marque n'est ajouté qu'ici : les pages passent uniquement leur
+     intitulé (« Direct », « Arsenal - Chelsea »…). Sans intitulé, le titre est
+     simplement « Zoera ». */
+  const pageTitle = (typeof title !== 'undefined' && title) ? String(title) : '';
+  const fullTitle = pageTitle ? pageTitle + ' · Zoera' : 'Zoera';
+  const pageDesc = (typeof description !== 'undefined' && description)
+    ? description
+    : 'Zoera — scores en direct, calendrier, classements, statistiques xG et prédictions.';
+%>
+<title><%= fullTitle %></title>
+<meta name="description" content="<%= pageDesc %>">
+<meta name="theme-color" content="#0a0d12">
+<meta name="color-scheme" content="dark">
+<meta property="og:site_name" content="Zoera">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="<%= fullTitle %>">
+<meta property="og:description" content="<%= pageDesc %>">
+<meta property="og:type" content="website">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zoera">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23cdf542'/%3E%3Cg fill='%2306080b' transform='translate(3.2 3.2) scale(2.4)'%3E%3Cpath d='M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z'/%3E%3Ccircle cx='20.4' cy='3.6' r='2.7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="/css/app.css">

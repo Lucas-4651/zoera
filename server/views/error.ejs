@@ -1,0 +1,28 @@
+<%
+  const errStatus = (typeof status !== 'undefined' && status) ? String(status) : '404';
+  const errTitle = (typeof title !== 'undefined' && title) ? title : (errStatus === '404' ? 'Page introuvable' : 'Une erreur est survenue');
+  const errMessage = (typeof message !== 'undefined' && message) ? message : (errStatus === '404'
+    ? 'Ce match, cette équipe ou cette page n’existe pas (ou plus).'
+    : 'Le service est momentanément indisponible. Réessayez dans quelques instants.');
+  const errDetail = (typeof detail !== 'undefined' && detail) ? detail : '';
+%>
+
+<section class="mx-auto flex max-w-2xl flex-col items-center gap-6 py-14 text-center">
+  <p class="ko-eyebrow font-display text-[64px] leading-none font-bold tracking-tight text-acid-400 md:text-[96px]"><%= errStatus %></p>
+
+  <div class="max-w-md">
+    <h1 class="font-display text-[24px] leading-tight font-bold tracking-tight text-mist-50 md:text-[30px]"><%= errTitle %></h1>
+    <p class="mt-3 text-[13px] leading-relaxed text-mist-400"><%= errMessage %></p>
+    <% if (errDetail) { %>
+      <p class="mt-2 text-[12px] text-mist-500"><%= errDetail %></p>
+    <% } %>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-center gap-2">
+    <a href="/" class="ko-focus inline-flex min-h-[44px] items-center rounded-[10px] border border-acid-500/40 bg-acid-500/12 px-5 text-[13px] font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">Retour à l’accueil</a>
+    <a href="/live" class="ko-focus inline-flex min-h-[44px] items-center rounded-[10px] border border-line bg-ink-800 px-5 text-[13px] font-semibold text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">Voir le direct</a>
+    <a href="/fixtures" class="ko-focus inline-flex min-h-[44px] items-center rounded-[10px] border border-line bg-ink-800 px-5 text-[13px] font-semibold text-mist-200 transition-colors duration-200 hover:border-line-strong hover:text-mist-50">Calendrier</a>
+  </div>
+
+  <p class="text-[11px] text-mist-500">Si le problème persiste, revenez dans quelques minutes : les données sont actualisées en continu.</p>
+</section>

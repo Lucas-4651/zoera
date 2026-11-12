@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#cdf542" role="img" aria-label="Zoera — direction 01">
+  <title>Zoera 01 — le Z frappé</title>
+  <g id="mark" fill="currentColor">
+    <path d="M2.5 4.2H17.2V7.6L7.2 17H21V20.4H5L2.6 17.6L13.6 7.6H2.5Z"/>
+    <circle cx="20.4" cy="3.6" r="2.7"/>
+  </g>
+</svg>
