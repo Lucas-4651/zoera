@@ -29,21 +29,18 @@ Trois briques, indépendantes :
 Android refuse le HTTP en clair (`cleartext: false`). Il faut donc un domaine
 avec un certificat valide avant de produire une APK utile.
 
-Options réalistes pour un serveur Node :
+Le dépôt contient déjà l'image de production (`Dockerfile`) et les
+configurations **Fly.io** (`fly.toml`) et **Render** (`render.yaml`) :
+procédure pas à pas dans [`DEPLOY.md`](DEPLOY.md). En résumé :
 
-- **VPS + Caddy** — le plus simple : Caddy obtient le certificat Let's Encrypt
-  tout seul.
-  ```caddyfile
-  zoera.mg {
-      reverse_proxy 127.0.0.1:3000
-  }
-  ```
-- **Fly.io / Render / Railway** — `npm start` + `PORT`, TLS fourni. Vérifier que
-  `CACHE_DIR` pointe sur un volume persistant, sinon le cache disque est perdu à
-  chaque redéploiement (les quotas API repartent de zéro : sans gravité, juste
-  plus d'appels).
-- **Cloudflare Tunnel** — si le serveur reste à la maison ; donne une URL
-  `https://…` sans ouvrir de port.
+```bash
+fly launch --no-deploy --copy-config --name zoera
+fly secrets set BSD_API_KEY=Votre_cle_ici
+fly deploy                     # → https://zoera.fly.dev
+```
+
+Options détaillées : VPS + Caddy, Fly.io, Render, Cloudflare Tunnel — voir
+[`DEPLOY.md`](DEPLOY.md).
 
 Une fois le site joignable en `https://…`, vérifier que la PWA est bien servie :
 

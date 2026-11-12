@@ -1,0 +1,17 @@
+# Contexte de build Docker : ne copier que ce qui sert à compiler Zoera.
+node_modules
+dist
+.cache
+.git
+.github
+android
+mobile
+docs
+*.md
+!README.md
+.env
+.env.*
+*.jks
+*.keystore
+openapi.json
+tools

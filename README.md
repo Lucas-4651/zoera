@@ -70,6 +70,9 @@ Termux/ARM.
   charge le site. Il faut d'abord héberger le serveur en HTTPS et définir la
   variable de dépôt `ZOERA_APP_URL`.
 
+Le dépôt contient l'image de production (`Dockerfile`) et les configurations
+Fly.io (`fly.toml`) et Render (`render.yaml`) : [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 Procédure complète (hébergement, signature, installation, régénération des
 icônes) : [`docs/MOBILE.md`](docs/MOBILE.md).
 
@@ -144,11 +147,15 @@ mobile/
   www/index.html      page locale embarquée dans l'APK (serveur injoignable)
 android/              projet natif Capacitor (généré, versionné)
 capacitor.config.ts   coquille Android : appId, server.url, errorPath
+Dockerfile            image de production (build Tailwind/TS → Node slim)
+fly.toml              déploiement Fly.io (région jnb, health check)
+render.yaml           déploiement Render (plan gratuit)
 .github/workflows/
   android.yml         build APK sur ubuntu-latest (impossible sur ARM/Termux)
 docs/
   CONTRACT.md         contrat d'intégration (signatures, view models, cache, DA)
   DESIGN.md           système de design (jetons, composants, motifs)
+  DEPLOY.md           hébergement HTTPS (Fly.io, Render, tunnel)
   MOBILE.md           PWA, APK, signature, build GitHub Actions
   bsd-api-reference.md  référence des 221 endpoints BSD
   brand/              directions de logo + page de comparaison

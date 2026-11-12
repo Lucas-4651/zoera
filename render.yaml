@@ -1,0 +1,19 @@
+# Déploiement Render — importer ce dépôt, Render lit ce fichier.
+# Plan gratuit : la machine s'endort après 15 min sans trafic et met ~50 s à
+# redémarrer. Pour des scores en direct, Fly.io (fly.toml) est plus adapté.
+services:
+  - type: web
+    name: zoera
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: CACHE_DIR
+        value: /app/.cache
+      - key: BSD_API_KEY
+        sync: false          # à renseigner dans le dashboard, jamais commité

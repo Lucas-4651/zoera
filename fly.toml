@@ -1,0 +1,38 @@
+app = "zoera"
+primary_region = "jnb"   # Johannesburg : le plus proche de Madagascar
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  CACHE_DIR = "/app/.cache"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"   # pas de trafic = machine arrêtée (coût nul)
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# Cache disque persistant (facultatif). À décommenter après avoir créé le volume :
+#   fly volumes create zoera_cache --region jnb --size 1
+# Puis monter le volume et faire pointer CACHE_DIR dessus. Attention : le volume
+# appartient à root, l'image tourne en `node` — ajouter un entrypoint qui fait
+# `chown -R node:node /data` avant de lancer Node.
+#
+# [[mounts]]
+#   source = "zoera_cache"
+#   destination = "/data"
