@@ -86,6 +86,9 @@ const STATUS_MAP: Record<string, { label: string; tone: StatusInfo['tone'] }> = 
   postponed: { label: 'Reporté', tone: 'alert' },
   cancelled: { label: 'Annulé', tone: 'muted' },
   unresolved: { label: 'Non joué', tone: 'muted' },
+  /* BSD renvoie parfois littéralement "unknown" : on ne l'affiche pas en
+     anglais dans la liste. */
+  unknown: { label: 'Programmé', tone: 'upcoming' },
 };
 
 const LIVE_STATUSES = new Set([
