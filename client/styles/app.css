@@ -142,6 +142,11 @@ body {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
+  /* Contient les descendants en position:absolute (libellés .sr-only des
+     cartes). Sans ça, ils échappent au rognage du rail, se placent à la
+     position statique de leur carte et étirent le document (scroll
+     horizontal de la page entière). */
+  position: relative;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -214,6 +219,66 @@ body {
 [data-tab-target][aria-selected="true"] {
   color: var(--color-acid-300);
   border-color: var(--color-acid-400);
+}
+
+/* ==========================================================================
+   Ligne de match — grille mobile à colonnes fixes
+   Sur mobile, la ligne est une grille [heure | domicile | score | extérieur
+   | favori] : les colonnes ont une largeur fixe, donc l'heure, les écussons
+   et le score retombent toujours au même x d'une ligne à l'autre. Le score
+   vit dans une bande de 32 px — la hauteur des écussons — pour partager leur
+   axe vertical. Le CSS du projet est hors layer : il l'emporte sur les
+   utilitaires Tailwind, la taille du score est donc pilotée ici.
+   ========================================================================== */
+.ko-match__score-val {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  font-size: 26px;
+}
+/* Pas encore de résultat : l'heure tient la colonne score, en plus petit. */
+.ko-match__score-val--pending {
+  font-size: 19px;
+}
+/* Score à deux chiffres de chaque côté (« 10 – 10 ») : on réduit pour
+   tenir dans la colonne sans empiéter sur les colonnes voisines. */
+.ko-match__score-val--tight {
+  font-size: 20px;
+}
+/* Sous-ligne du score. Sur mobile la colonne score fait 64 px : on y met
+   une forme courte (« MT 1–1 », « Prol. 1–0 », « TAB 4–3 ») qui tient sur
+   une ligne. La forme longue n'apparaît qu'à partir de md. */
+.ko-match__sub {
+  max-width: 64px;
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.ko-match__sub--long {
+  display: none;
+}
+@media (min-width: 48rem) {
+  .ko-match__score-val {
+    height: auto;
+    font-size: 32px;
+  }
+  .ko-match__score-val--pending {
+    font-size: 22px;
+  }
+  .ko-match__score-val--tight {
+    font-size: 26px;
+  }
+  .ko-match__sub {
+    max-width: none;
+    white-space: nowrap;
+  }
+  .ko-match__sub--short {
+    display: none;
+  }
+  .ko-match__sub--long {
+    display: block;
+  }
 }
 
 /* Icône favori */
