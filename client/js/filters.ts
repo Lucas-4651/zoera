@@ -144,39 +144,79 @@ function initLeaguesFilters(): void {
 }
 
 /* ------------------------------------------------------------------ */
-/* Prédictions : filtre par compétition (par nom)                        */
+/* Prédictions : période (aujourd'hui / demain / 7 jours / tout) + ligue */
 /* ------------------------------------------------------------------ */
 function initPredictionsFilter(): void {
+  const list = document.querySelector<HTMLElement>("[data-prediction-list]");
+  if (!list) return;
+
+  const items = qsa<HTMLElement>("[data-prediction-item]");
+  const buttons = qsa<HTMLElement>("[data-prediction-period]");
   const select = document.querySelector<HTMLSelectElement>("[data-prediction-league]");
-  if (!select) return;
+  const empty = document.querySelector<HTMLElement>("[data-prediction-empty]");
+  const counter = document.querySelector<HTMLElement>("[data-prediction-count]");
 
-  const apply = function (): void {
-    const option = select.options[select.selectedIndex];
-    /* On filtre sur le NOM de la ligue (attribut data-league-name), mais
-       l'option « toutes les compétitions » a une valeur vide : sans cette
-       garde, son libellé (« Toutes les compétitions ») était comparé aux
-       noms de ligues et masquait toutes les cartes. */
-    const wanted = option && option.value ? (option.textContent || "").trim() : "";
-    const items = qsa<HTMLElement>("[data-prediction-item]");
-    items.forEach(function (item) {
-      const name = (item.getAttribute("data-league-name") || "").trim();
-      item.hidden = !!wanted && name !== wanted;
-    });
+  /* Les bornes viennent du serveur : les dates sont calculées à Paris, pas
+     dans le fuseau du téléphone. */
+  const today = list.getAttribute("data-today") || "";
+  const tomorrow = list.getAttribute("data-tomorrow") || "";
+  const weekEnd = list.getAttribute("data-week-end") || "";
+  let period = currentParams().get("periode") || list.getAttribute("data-default-period") || "today";
 
-    /* Si le filtre courant ne laisse aucune carte visible, on affiche un
-       état vide et on masque la liste ; sinon l'inverse. */
-    const list = document.querySelector<HTMLElement>("[data-prediction-list]");
-    const empty = document.querySelector<HTMLElement>("[data-prediction-empty]");
-    if (list && empty) {
-      const visible = items.filter(function (item) {
-        return !item.hidden;
-      }).length;
-      empty.hidden = visible > 0;
-      list.hidden = visible === 0;
-    }
+  const inPeriod = function (day: string): boolean {
+    if (period === "all") return true;
+    if (period === "today") return day === today;
+    if (period === "tomorrow") return day === tomorrow;
+    if (period === "week") return day >= today && day <= weekEnd;
+    return true;
   };
 
-  select.addEventListener("change", apply);
+  const apply = function (): void {
+    buttons.forEach(function (button) {
+      const active = (button.getAttribute("data-prediction-period") || "") === period;
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.classList.toggle("border-acid-500/50", active);
+      button.classList.toggle("bg-acid-500/12", active);
+      button.classList.toggle("text-acid-300", active);
+      button.classList.toggle("border-line", !active);
+      button.classList.toggle("bg-ink-850", !active);
+      button.classList.toggle("text-mist-300", !active);
+    });
+
+    const wantedLeague = select ? select.value : "";
+    let visible = 0;
+    items.forEach(function (item) {
+      const league = item.getAttribute("data-league") || "";
+      const day = item.getAttribute("data-date") || "";
+      const show = inPeriod(day) && (!wantedLeague || league === wantedLeague);
+      item.hidden = !show;
+      if (show) visible += 1;
+    });
+
+    if (empty) empty.hidden = visible > 0;
+    list.hidden = visible === 0;
+    if (counter) counter.textContent = String(visible);
+  };
+
+  buttons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      period = button.getAttribute("data-prediction-period") || "today";
+      syncUrl("periode", period === "today" ? "" : period);
+      apply();
+    });
+  });
+
+  if (select) {
+    select.addEventListener("change", function () {
+      syncUrl("league", select.value);
+      apply();
+    });
+  }
+
+  /* État initial : paramètres d'URL éventuels (lien partagé). */
+  const initialLeague = currentParams().get("league");
+  if (initialLeague && select) select.value = initialLeague;
+
   apply();
 }
 

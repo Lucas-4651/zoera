@@ -1,103 +1,168 @@
 <%
-  const predList = predictions || [];
-  const leagueList = leagues || [];
+  /* Page prédictions — « les appels du modèle ».
+     Référence de lecture : la page prédictions de BSD (« we only call it when
+     we're sure »). Un match = une ligne, et seuls les matchs qui portent un
+     appel ≥ seuil (80 %) sont publiés. Les probabilités détaillées restent
+     visibles en bas de ligne (barre 1X2 + triplet), le détail complet vit sur
+     la fiche du match. */
+  const rowList = rows || [];
+  const leagueOptions = predLeagues || [];
+  const countMap = counts || { today: 0, tomorrow: 0, week: 0, all: 0 };
+  const dayKeys = dates || { today: '', tomorrow: '', weekEnd: '' };
+  const thresholdValue = typeof threshold === 'number' ? threshold : 0.8;
+
+  /* L'onglet ouvert par défaut : aujourd'hui si le modèle y a publié quelque
+     chose, sinon la semaine (on n'accueille personne sur une page vide). */
+  const defaultPeriod = countMap.today > 0 ? 'today' : countMap.week > 0 ? 'week' : 'all';
+  const periods = [
+    { key: 'today', label: 'Aujourd’hui', count: countMap.today },
+    { key: 'tomorrow', label: 'Demain', count: countMap.tomorrow },
+    { key: 'week', label: '7 jours', count: countMap.week },
+    { key: 'all', label: 'Tout', count: countMap.all },
+  ];
 %>
 
 <%- include("partials/page-head", {
   eyebrow: 'Modèle',
   title: 'Prédictions',
-  subtitle: 'Les pronostics du modèle : issues probables, score attendu et niveau de confiance.'
+  subtitle: 'Les matchs où le modèle a quelque chose à dire.'
 }) %>
 
-<% if (leagueList.length > 1) { %>
-  <div class="mb-5 flex items-center gap-3">
-    <label for="pred-league" class="ko-eyebrow shrink-0 text-[11px] text-mist-500">Compétition</label>
-    <select id="pred-league" data-prediction-league class="ko-focus h-11 w-full max-w-xs rounded-[10px] border border-line bg-ink-850 px-3 text-[13px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
-      <option value="">Toutes les compétitions</option>
-      <% leagueList.forEach(function (lg) { %>
-        <option value="<%= lg.id %>"><%= lg.name %></option>
-      <% }); %>
-    </select>
-  </div>
-<% } %>
-
-<% if (predList.length === 0) { %>
-  <%- include("partials/empty-state", { title: 'Aucune prédiction disponible', message: 'Le modèle n’a pas encore publié de prévision pour les prochaines rencontres.', icon: 'sparkles' }) %>
+<% if (rowList.length === 0) { %>
+  <%- include("partials/empty-state", {
+    title: 'Aucun appel publié',
+    message: 'Le modèle n’a trouvé aucune rencontre suffisamment sûre dans les prochains jours. Il ne publie rien plutôt que de publier du mou.',
+    icon: 'sparkles'
+  }) %>
 <% } else { %>
-  <% /* État vide affiché côté client quand le filtre courant ne laisse
-       aucune carte visible (compétition sans aucune prédiction). */ %>
-  <div data-prediction-empty hidden>
-    <%- include("partials/empty-state", { title: 'Aucune prédiction pour cette compétition', message: 'Le modèle n’a publié aucune prévision pour les rencontres de cette compétition.', icon: 'sparkles' }) %>
+
+  <div class="mx-auto w-full max-w-[880px]">
+  <!-- Règle de publication + volume du jour -->
+  <div class="mb-4 border border-line bg-ink-850 p-4">
+    <div class="flex items-baseline gap-2.5">
+      <span class="ko-tabular font-display text-[32px] leading-none font-bold tracking-tight text-acid-300"><%= Math.round(thresholdValue * 100) %><span class="text-[16px]">%</span></span>
+      <span class="ko-eyebrow text-[10px] text-mist-500">seuil de publication</span>
+    </div>
+    <p class="mt-2.5 text-[12px] leading-snug text-mist-300">En dessous de ce seuil, on se tait : la plupart des matchs n’ont aucun appel.</p>
+    <p class="mt-2 flex flex-wrap items-baseline gap-x-1.5 text-[11px] text-mist-500">
+      <span class="ko-tabular font-semibold text-mist-200"><%= countMap.all %></span> appels sur
+      <span class="ko-tabular"><%= scanned || 0 %></span> matchs à venir<% if (modelName) { %><span class="text-mist-500/50">·</span><span class="text-mist-400"><%= modelName %></span><% } %>
+    </p>
   </div>
-  <ul data-prediction-list class="grid gap-3 md:grid-cols-2">
-    <% predList.forEach(function (p) { %>
-      <%
-        const homeId = (typeof p.homeTeamId !== 'undefined' && p.homeTeamId !== null && p.homeTeamId !== undefined) ? p.homeTeamId : null;
-        const awayId = (typeof p.awayTeamId !== 'undefined' && p.awayTeamId !== null && p.awayTeamId !== undefined) ? p.awayTeamId : null;
-        const leagueId = (typeof p.leagueId !== 'undefined' && p.leagueId !== null && p.leagueId !== undefined) ? p.leagueId : null;
-        const homeName = p.homeTeam || '—';
-        const awayName = p.awayTeam || '—';
-      %>
-      <li data-prediction-item data-league-name="<%= p.leagueName || '' %>" class="border border-line bg-ink-900 p-4 transition-colors duration-200 hover:border-line-strong">
-        <!-- Compétition : logo + nom -->
-        <div class="flex items-center justify-center gap-2">
-          <% if (leagueId !== null) { %>
-            <%- include("partials/logo", { id: leagueId, name: p.leagueName || '', kind: 'league', size: 'xs' }) %>
-          <% } %>
-          <span class="truncate text-[11px] tracking-wide text-mist-500 uppercase"><%= p.leagueName || '' %></span>
-        </div>
 
-        <!-- Équipes : logos + noms, score attendu mis en avant -->
-        <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-          <div class="flex min-w-0 flex-col items-center gap-1.5 text-center">
-            <% if (homeId !== null) { %>
-              <%- include("partials/logo", { id: homeId, name: homeName, kind: 'team', size: 'sm' }) %>
-            <% } %>
-            <span class="line-clamp-2 font-display text-[13px] leading-tight font-bold text-mist-50"><%= homeName %></span>
+  <!-- Période -->
+  <div class="ko-rail mb-3 -mx-3 px-3 md:mx-0 md:px-0" role="group" aria-label="Période">
+    <% periods.forEach(function (p) { %>
+      <button type="button" data-prediction-period="<%= p.key %>"
+              aria-pressed="<%= p.key === defaultPeriod ? 'true' : 'false' %>"
+              class="ko-focus inline-flex min-h-[38px] items-center gap-1 rounded-pill border px-2.5 text-[11px] font-semibold transition-colors duration-200 <%= p.key === defaultPeriod ? 'border-acid-500/50 bg-acid-500/12 text-acid-300' : 'border-line bg-ink-850 text-mist-300 hover:border-line-strong' %>">
+        <%= p.label %><span class="ko-tabular text-[9px] opacity-60"><%= p.count %></span>
+      </button>
+    <% }); %>
+  </div>
+
+  <!-- Compétition -->
+  <% if (leagueOptions.length > 1) { %>
+    <div class="mb-4 flex items-center gap-3">
+      <label for="pred-league" class="ko-eyebrow shrink-0 text-[11px] text-mist-500">Compétition</label>
+      <select id="pred-league" data-prediction-league
+              class="ko-focus h-11 w-full max-w-xs rounded-[10px] border border-line bg-ink-850 px-3 text-[13px] text-mist-100 transition-colors duration-200 hover:border-line-strong focus:border-acid-500 focus:outline-none">
+        <option value="">Toutes les compétitions</option>
+        <% leagueOptions.forEach(function (lg) { %>
+          <option value="<%= lg.id %>"><%= lg.name %></option>
+        <% }); %>
+      </select>
+    </div>
+  <% } %>
+
+  <!-- État vide : le filtre courant ne laisse aucun appel -->
+  <div data-prediction-empty hidden>
+    <%- include("partials/empty-state", {
+      title: 'Aucun appel sur ce filtre',
+      message: 'Le modèle n’a rien publié au-dessus du seuil pour cette période ou cette compétition.',
+      icon: 'sparkles'
+    }) %>
+  </div>
+
+  <ul data-prediction-list
+      data-today="<%= dayKeys.today %>"
+      data-tomorrow="<%= dayKeys.tomorrow %>"
+      data-week-end="<%= dayKeys.weekEnd %>"
+      data-default-period="<%= defaultPeriod %>"
+      class="border border-line bg-ink-900">
+    <% rowList.forEach(function (p) {
+         const top = p.calls[0];
+         const rest = p.calls.slice(1);
+         const homePct = Math.round((p.homeProb || 0) * 100);
+         const drawPct = Math.round((p.drawProb || 0) * 100);
+         const awayPct = Math.round((p.awayProb || 0) * 100);
+         const xg = (p.expectedHomeGoals !== null && p.expectedHomeGoals !== undefined
+                     && p.expectedAwayGoals !== null && p.expectedAwayGoals !== undefined)
+                    ? fmt.number(p.expectedHomeGoals, { decimals: 1 }) + '–' + fmt.number(p.expectedAwayGoals, { decimals: 1 })
+                    : '';
+    %>
+      <li data-prediction-item
+          data-date="<%= p.dateKey %>"
+          data-league="<%= p.leagueId === null ? '' : p.leagueId %>"
+          class="border-b border-line/80 last:border-b-0">
+        <a href="<%= p.eventId ? '/match/' + p.eventId : '/predictions' %>"
+           class="ko-focus grid grid-cols-[44px_minmax(0,1fr)_auto] items-start gap-x-3 px-3 pt-3 pb-2.5 transition-colors duration-200 hover:bg-ink-850">
+
+          <!-- Heure + jour -->
+          <div class="pt-0.5">
+            <span class="ko-tabular block font-display text-[13px] leading-none font-bold tracking-tight text-mist-200"><%= p.date ? fmt.time(p.date) : '—' %></span>
+            <span class="mt-1 block text-[9px] whitespace-nowrap text-mist-500"><%= p.date ? fmt.shortDay(p.date) : '' %></span>
           </div>
 
-          <div class="flex shrink-0 flex-col items-center">
-            <span class="ko-tabular font-display text-[26px] leading-none font-bold text-acid-300"><%= p.score || '—' %></span>
-            <span class="mt-1 text-[9px] tracking-widest text-mist-500 uppercase">Score prévu</span>
+          <!-- Équipes, compétition, appel -->
+          <div class="min-w-0">
+            <div class="flex min-w-0 items-center gap-1.5">
+              <%- include("partials/logo", { id: p.homeTeamId, name: p.homeTeam || '', kind: 'team', size: 'sm' }) %>
+              <span class="truncate text-[13px] leading-tight font-medium text-mist-100"><%= p.homeTeam || '—' %></span>
+            </div>
+            <div class="mt-1 flex min-w-0 items-center gap-1.5">
+              <%- include("partials/logo", { id: p.awayTeamId, name: p.awayTeam || '', kind: 'team', size: 'sm' }) %>
+              <span class="truncate text-[13px] leading-tight text-mist-300"><%= p.awayTeam || '—' %></span>
+            </div>
+            <p class="mt-1 truncate text-[10px] text-mist-500"><%= p.leagueName || '' %></p>
+
+            <p class="mt-1.5 text-[12px] leading-snug font-semibold text-acid-300"><%= top.label %></p>
+            <% if (rest.length) { %>
+              <p class="mt-0.5 text-[10px] leading-snug text-mist-500">
+                Aussi :
+                <% rest.forEach(function (c, i) { %><% if (i) { %> · <% } else { %> <% } %><span class="ko-tabular"><%= callShortLabel(c) %> <%= fmt.percent(c.probability, { decimals: 0 }) %></span><% }); %>
+              </p>
+            <% } %>
           </div>
 
-          <div class="flex min-w-0 flex-col items-center gap-1.5 text-center">
-            <% if (awayId !== null) { %>
-              <%- include("partials/logo", { id: awayId, name: awayName, kind: 'team', size: 'sm' }) %>
-            <% } %>
-            <span class="line-clamp-2 font-display text-[13px] leading-tight font-bold text-mist-50"><%= awayName %></span>
+          <!-- Confiance -->
+          <div class="text-right">
+            <span class="ko-tabular block font-display text-[20px] leading-none font-bold tracking-tight text-acid-300"><%= fmt.percent(top.probability, { decimals: 0 }) %></span>
+            <span class="mt-1 block text-[9px] tracking-[0.12em] text-mist-500 uppercase">confiance</span>
           </div>
-        </div>
 
-        <div class="mt-3 flex h-2 overflow-hidden rounded-full bg-ink-700" role="img" aria-label="Probabilités 1X2">
-          <span class="bg-acid-500" style="width:<%= Math.round((p.homeProb || 0) * 100) %>%"></span>
-          <span class="bg-mist-500" style="width:<%= Math.round((p.drawProb || 0) * 100) %>%"></span>
-          <span class="bg-blood-500/80" style="width:<%= Math.round((p.awayProb || 0) * 100) %>%"></span>
-        </div>
-
-        <ul class="mt-3 grid grid-cols-3 gap-2 text-center">
-          <% [['1', p.homeProb], ['X', p.drawProb], ['2', p.awayProb]].forEach(function (k) { %>
-            <li class="rounded-[8px] border border-line bg-ink-850 px-2 py-1.5">
-              <span class="ko-tabular font-display text-[15px] font-bold text-mist-50"><%= fmt.percent(k[1]) %></span>
-              <span class="ml-1 text-[10px] text-mist-500"><%= k[0] %></span>
-            </li>
-          <% }); %>
-        </ul>
-
-        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-[10px] text-mist-500">
-          <span>
-            <% if (p.topOutcome) { %><span class="font-semibold text-mist-200"><%= p.topOutcome %></span> · confiance <span class="ko-tabular text-acid-300"><%= fmt.percent(p.topProbability) %></span><% } %>
-            <% if (p.over25 !== null && p.over25 !== undefined) { %> · +2,5 <span class="ko-tabular"><%= fmt.percent(p.over25) %></span><% } %>
-          </span>
-          <span class="flex items-center gap-2">
-            <% if (p.date) { %><span class="ko-tabular"><%= fmt.date(p.date, { withTime: true }) %></span><% } %>
-            <% if (p.model) { %><span class="rounded-pill border border-line bg-ink-850 px-2 py-0.5"><%= p.model %></span><% } %>
-            <% if (p.eventId) { %>
-              <a href="/match/<%= p.eventId %>" class="ko-focus rounded-pill border border-acid-500/35 bg-acid-500/10 px-2.5 py-1 font-semibold text-acid-300 transition-colors duration-200 hover:bg-acid-500/20">Fiche match →</a>
-            <% } %>
-          </span>
-        </div>
+          <!-- Barre 1X2 -->
+          <div class="col-span-3 mt-2.5 flex h-[3px] gap-px overflow-hidden rounded-full bg-ink-700" role="img"
+               aria-label="Probabilités 1, X, 2 : <%= homePct %> %, <%= drawPct %> %, <%= awayPct %> %">
+            <span class="bg-acid-500" style="width:<%= homePct %>%"></span>
+            <span class="bg-mist-500" style="width:<%= drawPct %>%"></span>
+            <span class="bg-blood-500/80" style="width:<%= awayPct %>%"></span>
+          </div>
+          <div class="col-span-3 mt-1 flex items-center justify-between gap-2 text-[9px] text-mist-500">
+            <span class="truncate">
+              <% if (p.score) { %>Score prévu <span class="ko-tabular text-mist-400"><%= p.score %></span>
+              <% } else if (xg) { %>xG <span class="ko-tabular text-mist-400"><%= xg %></span><% } %>
+            </span>
+            <span class="ko-tabular flex shrink-0 items-center gap-2">
+              <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-acid-500" aria-hidden="true"></span><%= homePct %> %</span>
+              <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-mist-500" aria-hidden="true"></span><%= drawPct %> %</span>
+              <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-blood-500/80" aria-hidden="true"></span><%= awayPct %> %</span>
+            </span>
+          </div>
+        </a>
       </li>
     <% }); %>
   </ul>
+
+  </div>
 <% } %>

@@ -359,6 +359,8 @@ export interface Prediction {
   homeTeamId: number | null;
   /** Identifiant du club à l'extérieur (pour affichage en logo). */
   awayTeamId: number | null;
+  /** Identifiant de la compétition (logo + filtre). */
+  leagueId: number | null;
   leagueName: string | null;
   date: Date | null;
   homeProb: number | null;
@@ -368,7 +370,9 @@ export interface Prediction {
   topProbability: number | null;
   expectedHomeGoals: number | null;
   expectedAwayGoals: number | null;
+  over15: number | null;
   over25: number | null;
+  over35: number | null;
   btts: number | null;
   score: string | null;
   model: string | null;

@@ -80,6 +80,24 @@ const fmt = {
     if (minutes > 0) return `il y a ${minutes} min`;
     return `dans ${Math.abs(minutes)} min`;
   },
+  shortDay(value: Date | string | null): string {
+    const date = toDate(value);
+    if (!date) return "—";
+    return new Intl.DateTimeFormat("fr-FR", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  },
+  outcome(value: string | null | undefined): string {
+    if (!value) return "";
+    const key = value.toUpperCase();
+    if (key === "HOME" || key === "H" || key === "1") return "1";
+    if (key === "DRAW" || key === "D" || key === "X") return "X";
+    if (key === "AWAY" || key === "A" || key === "2") return "2";
+    return value;
+  },
   status(status: string) {
     const key = String(status || "unknown");
     return STATUS_MAP[key] || { label: "Inconnu", tone: "muted", live: false };
@@ -762,7 +780,25 @@ const pages: { name: string; vm: Vm; title: string; description: string; current
     title: "Prédictions",
     description: "Prédictions du modèle.",
     currentPath: "/predictions",
-    vm: { predictions: [prediction], leagues: [league, league2] }
+    vm: {
+      rows: [
+        {
+          ...prediction,
+          dateKey: "2026-11-13",
+          calls: [
+            { key: "1X", label: "Liverpool gagne ou fait match nul", probability: 0.88 },
+            { key: "O25", label: "Plus de 2,5 buts", probability: 0.84 }
+          ]
+        }
+      ],
+      predLeagues: [{ id: 1, name: "Premier League" }],
+      counts: { today: 1, tomorrow: 0, week: 1, all: 1 },
+      scanned: 40,
+      threshold: 0.8,
+      modelName: "dc-blend-v1",
+      callShortLabel: (c: { key: string }) => (c.key === "O25" ? "+2,5 buts" : "double chance"),
+      dates: { today: "2026-11-13", tomorrow: "2026-11-14", weekEnd: "2026-11-19" }
+    }
   },
   {
     name: "odds",

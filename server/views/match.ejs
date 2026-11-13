@@ -622,8 +622,16 @@
               <dd class="ko-tabular text-mist-100"><%= evPrediction.expectedAwayGoals === null || evPrediction.expectedAwayGoals === undefined ? '—' : Number(evPrediction.expectedAwayGoals).toFixed(2) %></dd>
             </div>
             <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Plus de 1,5 but</dt>
+              <dd class="ko-tabular text-mist-100"><%= fmt.percent(evPrediction.over15) %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
               <dt class="text-mist-400">Plus de 2,5 buts</dt>
               <dd class="ko-tabular text-mist-100"><%= fmt.percent(evPrediction.over25) %></dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
+              <dt class="text-mist-400">Plus de 3,5 buts</dt>
+              <dd class="ko-tabular text-mist-100"><%= fmt.percent(evPrediction.over35) %></dd>
             </div>
             <div class="flex items-center justify-between border-b border-line/70 pb-1.5">
               <dt class="text-mist-400">Les deux équipes marquent</dt>

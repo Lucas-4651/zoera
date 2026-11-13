@@ -39,6 +39,14 @@ const dayFmt = new Intl.DateTimeFormat('fr-FR', {
   timeZone: TZ,
 });
 
+const weekdayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', timeZone: TZ });
+
+const dayMonthFmt = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  timeZone: TZ,
+});
+
 /** "YYYY-MM-DD" du jour courant dans le fuseau d'affichage. */
 function parisDayKey(d: Date): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -146,6 +154,13 @@ export const fmt = {
     return dayFmt.format(date);
   },
 
+  /** "ven. 13/11" — bandeau compact des listes (date + heure). */
+  shortDay(d: Date | string | null): string {
+    const date = toDate(d);
+    if (!date) return '';
+    return `${weekdayFmt.format(date)} ${dayMonthFmt.format(date)}`;
+  },
+
   /** "il y a 3 min" | "dans 2 h" */
   relative(d: Date | string | null): string {
     const date = toDate(d);
@@ -220,6 +235,16 @@ export const fmt = {
     if (typeof n !== 'number' || !Number.isFinite(n)) return '—';
     const decimals = opts?.decimals ?? 1;
     return `${fmt.number(n * 100, { decimals })} %`;
+  },
+
+  /** Code 1X2 d'une issue du modèle (« AWAY » → « 2 »). */
+  outcome(value: string | null | undefined): string {
+    if (!value) return '';
+    const key = value.trim().toUpperCase();
+    if (key === 'HOME' || key === 'H' || key === '1') return '1';
+    if (key === 'DRAW' || key === 'D' || key === 'X') return 'X';
+    if (key === 'AWAY' || key === 'A' || key === '2') return '2';
+    return value;
   },
 
   /** "MC" pour "Manchester City" */

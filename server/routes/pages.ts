@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { config } from '../config';
 import { getQuota } from '../lib/bsd/client';
 import { fmt, nl2br, eq, json } from '../lib/format';
+import { PREDICTION_THRESHOLD, buildCalls, callShortLabel } from '../lib/predictions';
 import {
   getBestOdds,
   getBestXI,
@@ -560,14 +561,60 @@ pagesRouter.get('/players/:id', async (req: Request, res: Response) => {
 
 pagesRouter.get('/predictions', async (_req: Request, res: Response) => {
   try {
-    const [predictions, leagues] = await Promise.all([
-      getPredictions({ limit: 40 }).catch(() => []),
-      getLeagues().catch(() => [] as League[]),
-    ]);
-    renderPage(res, 'predictions', { predictions, leagues }, {
-      title: 'Prédictions',
-      description: 'Pronostics chiffrés et probabilités des matchs à venir.',
-    });
+    /* Assez large pour couvrir les 5 jours publiés par le modèle, puis on ne
+       garde que les matchs qui portent au moins un appel ≥ seuil. */
+    const predictions = await getPredictions({ limit: 200 }).catch(() => []);
+    const now = new Date();
+    const today = parisDateKey(now);
+    const tomorrow = parisDateKey(new Date(now.getTime() + DAY));
+    const weekEnd = parisDateKey(new Date(now.getTime() + 6 * DAY));
+
+    const rows = predictions
+      .map((p) => ({
+        ...p,
+        dateKey: p.date ? parisDateKey(p.date) : '',
+        calls: buildCalls(p),
+      }))
+      .filter((p) => p.calls.length > 0)
+      .sort((a, b) => (a.date && b.date ? a.date.getTime() - b.date.getTime() : 0));
+
+    /* Compétitions réellement présentes, pour le filtre. */
+    const leagueMap = new Map<number, string>();
+    for (const row of rows) {
+      if (row.leagueId !== null && row.leagueName && !leagueMap.has(row.leagueId)) {
+        leagueMap.set(row.leagueId, row.leagueName);
+      }
+    }
+    const predLeagues = Array.from(leagueMap, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name, 'fr'),
+    );
+
+    const counts = {
+      today: rows.filter((r) => r.dateKey === today).length,
+      tomorrow: rows.filter((r) => r.dateKey === tomorrow).length,
+      week: rows.filter((r) => r.dateKey >= today && r.dateKey <= weekEnd).length,
+      all: rows.length,
+    };
+    const modelName = rows.find((r) => r.model)?.model ?? '';
+
+    renderPage(
+      res,
+      'predictions',
+      {
+        rows,
+        predLeagues,
+        counts,
+        scanned: predictions.length,
+        threshold: PREDICTION_THRESHOLD,
+        modelName,
+        callShortLabel,
+        dates: { today, tomorrow, weekEnd },
+      },
+      {
+        title: 'Prédictions',
+        description: 'Les appels du modèle : un pari par match, publié seulement à partir de 80 % de confiance.',
+      },
+    );
   } catch (err) {
     nextError(res, err, 'Impossible de charger les prédictions.');
   }

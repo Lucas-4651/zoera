@@ -313,7 +313,7 @@
               </span>
               <span class="mt-1.5 flex items-center justify-between gap-3 text-[10px] text-mist-500">
                 <span><%= p.leagueName || '' %></span>
-                <span class="ko-tabular"><%= p.topOutcome || '' %> · <%= fmt.percent(p.topProbability) %></span>
+                <span class="ko-tabular"><%= fmt.outcome(p.topOutcome) %> · <%= fmt.percent(p.topProbability) %></span>
               </span>
             </a>
           </li>
